@@ -72,6 +72,23 @@ def build_dynamic_plot_results() -> RmsResults:
     return results
 
 
+def test_cancelled_dynamic_prefix_can_be_plotted_and_closed(qt_app: QtWidgets.QApplication) -> None:
+    """Keep the accepted prefix visible without plotting the uncomputed NaN tail."""
+    results = build_dynamic_plot_results()
+    results.values[2:, :, 0] = np.nan
+    handler = DynamicsResultsHandler(results=results)
+    handler.plot_series(series=handler.series_by_var_uid[1][0])
+    qt_app.processEvents()
+    plot = handler._open_plot_dialogues[-1]
+    assert plot.isVisible()
+    assert plot.chart._has_points
+    assert plot.chart._x_min == 0.0
+    assert plot.chart._x_max == 0.5
+    handler.close_plot_dialogs()
+    qt_app.processEvents()
+    assert plot.chart._disposed
+
+
 def test_dynamic_native_dialogs_survive_repeated_plot_and_close_cycles(
         qt_app: QtWidgets.QApplication) -> None:
     """Exercise dynamic time, XY, and direct-series dialogs through teardown.

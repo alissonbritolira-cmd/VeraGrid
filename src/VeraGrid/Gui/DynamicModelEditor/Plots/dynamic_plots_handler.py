@@ -2846,7 +2846,8 @@ class DynamicsResultsHandler:
     __slots__ = ("results", "circuit", "dialog_parent", "plot_simulation_type",
                   "pre_simulation_mode", "tree_data", "tree_model", "proxy_model", "plots_model", "group_idx",
                   "var_role", "group_name_role", "tree_state_role", "drag_mime_type", "drop_target_role", "entry_role_role", "plot_groups", "series_by_key",
-                  "series_by_var_uid", "candidates_by_parameter_key", "source_labels", "_open_plot_dialogues")
+                  "series_by_var_uid", "candidates_by_parameter_key", "source_labels", "_open_plot_dialogues",
+                  "__weakref__")
 
     def __init__(self,
                  results: RmsResults | EmtResults | None,
