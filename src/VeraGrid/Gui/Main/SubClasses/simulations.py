@@ -35,6 +35,7 @@ from VeraGridEngine.Devices.types import AREA_TYPES
 from VeraGridEngine.Utils.MIP.selected_interface import get_available_mip_solvers, get_available_mip_frameworks
 from VeraGridEngine.IO.veragrid.remote import RemoteInstruction
 from VeraGridEngine.Compilers.circuit_to_data import compile_numerical_circuit_at
+from VeraGridEngine.Simulations.PowerFlow.power_flow_input import power_flow_input_fingerprint
 from VeraGridEngine.Simulations.types import DRIVER_OBJECTS
 from VeraGridEngine.basic_structures import CxVec, IntVec, Vec
 from VeraGridEngine.enumerations import (DeviceType, AvailableTransferMode, SolverType, MIPSolvers, TimeGrouping,
@@ -4080,8 +4081,6 @@ class SimulationsMain(TimeEventsMain):
 
         :return: None.
         """
-        self.remove_simulation(SimulationTypes.RmsDynamic_run)
-
         _, pf_results = self.session.power_flow
 
         rms_options = self.get_selected_rms_simulation_options()
@@ -4092,6 +4091,17 @@ class SimulationsMain(TimeEventsMain):
                                  'The results are needed to initialize this simulation.'))
             else:
                 if bool(pf_results.converged):
+                    recorded_input = pf_results.input_fingerprint
+                    if (len(recorded_input) != 1 or not recorded_input[0]
+                            or recorded_input[0] != power_flow_input_fingerprint(self.circuit)):
+                        info_msg(self.tr(
+                            'The power flow results could not be verified against the current circuit.\n'
+                            'Run a power flow again before running this RMS simulation.'
+                        ))
+                        return
+
+                    # Only update the running-study state after accepting the inputs.
+                    self.remove_simulation(SimulationTypes.RmsDynamic_run)
                     self.add_simulation(SimulationTypes.RmsDynamic_run)
 
                     # self.add_simulation(SimulationTypes.RmsDynamic_run)

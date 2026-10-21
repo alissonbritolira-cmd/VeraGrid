@@ -9,6 +9,7 @@ from typing import Union, List, TYPE_CHECKING
 from VeraGridEngine.Simulations.PowerFlow.power_flow_options import PowerFlowOptions
 from VeraGridEngine.Simulations.PowerFlow.power_flow_worker import multi_island_pf
 from VeraGridEngine.Simulations.PowerFlow.power_flow_results import PowerFlowResults
+from VeraGridEngine.Simulations.PowerFlow.power_flow_input import power_flow_input_fingerprint
 from VeraGridEngine.Devices.multi_circuit import MultiCircuit
 from VeraGridEngine.Simulations.driver_template import DriverTemplate
 from VeraGridEngine.Compilers.Gslv.activation import GSLV_AVAILABLE
@@ -133,6 +134,7 @@ class PowerFlowDriver(DriverTemplate):
         """
         self.tic()
         self.report_text("Compiling and configuring...")
+        input_fingerprint = power_flow_input_fingerprint(self.grid, self.t_idx)
         if self.engine == EngineType.GSLV and not GSLV_AVAILABLE:
             self.engine = EngineType.VeraGrid
             self.logger.add_warning('Failed back to VeraGrid')
@@ -171,6 +173,9 @@ class PowerFlowDriver(DriverTemplate):
 
         # fill F, T, Areas, etc...
         self.results.fill_circuit_info(self.grid)
+        # Do not attribute a solved point to inputs edited during the run.
+        if input_fingerprint == power_flow_input_fingerprint(self.grid, self.t_idx):
+            self.results.input_fingerprint = np.array([input_fingerprint], dtype=str)
 
         self.toc()
 

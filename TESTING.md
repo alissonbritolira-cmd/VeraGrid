@@ -25,6 +25,18 @@ python -m pytest src/tests/GUI
 
 ## Test policy
 
+The RMS operating-point guard has focused coverage in:
+
+```bash
+python -m pytest src/tests/GUI/test_rms_power_flow_input.py
+```
+
+For a manual check, run a power flow, edit a load in the database, and start
+RMS. The GUI should request another power flow and preserve the previous RMS
+study. After recalculating the power flow, RMS should run normally. Power-flow
+results from older archives without an input fingerprint remain readable but
+require a new power flow before GUI RMS initialization.
+
 As major new functionality is added, automated tests should be added with it.
 
 The same applies to bug fixes whenever the bug can be reproduced in a stable test.

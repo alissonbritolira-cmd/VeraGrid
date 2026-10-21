@@ -143,6 +143,7 @@ class NumericPowerFlowResults:
 class PowerFlowResults(ResultsTemplate):
 
     LOCAL_RESULTS_DECLARATIONS = (
+        ResultsProperty(name='input_fingerprint', tpe=StrVec, old_names=list(), expandable=False),
         ResultsProperty(name='bus_names', tpe=StrVec, old_names=list(), expandable=False),
         ResultsProperty(name='branch_names', tpe=StrVec, old_names=list(), expandable=False),
         ResultsProperty(name='hvdc_names', tpe=StrVec, old_names=list(), expandable=False),
@@ -188,6 +189,7 @@ class PowerFlowResults(ResultsTemplate):
     )
 
     __slots__ = (
+        "input_fingerprint",
         "bus_names",
         "branch_names",
         "hvdc_names",
@@ -334,6 +336,9 @@ class PowerFlowResults(ResultsTemplate):
             study_results_type=StudyResultsType.PowerFlow
         )
 
+        # Older result archives have no input identity. Keep them readable;
+        # callers requiring a verified operating point must request a new PF.
+        self.input_fingerprint: StrVec = np.array([""], dtype=str)
         self.bus_names: StrVec = bus_names
         self.branch_names: StrVec = branch_names
         self.hvdc_names: StrVec = hvdc_names
