@@ -61,3 +61,30 @@ Before opening or updating a pull request:
 - Run `pylint` on changed Python code when practical.
 - Add or update tests for any new behavior or bug fix.
 - Call out any untested risk explicitly in the pull request.
+
+## Study workspace
+
+The first Study Mode workspace is still being improved. It provides another view
+of the existing circuit objects, intended to make common engineering tasks faster
+without navigating or creating a diagram. It does not implement a separate model,
+solver, results cache or time-profile editor.
+
+Run the focused widget checks:
+
+```bash
+python -m pytest src/tests/GUI/test_study_workspace.py
+```
+
+For a desktop check, open a public case and select **Study Mode** beside Results.
+Search by equipment name, code, ID or endpoint bus, filter by type, sort the matches
+and select one. Select a bus to list connected equipment; double-click a connection,
+choose an endpoint with **Go to bus**, then use **Back**. Filter properties and edit a
+snapshot value with the same delegates used in the database. The snapshot edit must
+be visible in the database without changing time profiles. Run the existing power
+flow action and consult the normal Results tab, then save and reopen the case to
+verify that the edited native values are retained.
+
+Also check empty cases, switching cases while the tab is selected, refreshing after
+edits made elsewhere, and starting a worker while an editor is open. A pending edit
+must not change the previous case, deleted equipment or a running study. Widget
+tests, including offscreen checks, do not replace this Windows navigation check.

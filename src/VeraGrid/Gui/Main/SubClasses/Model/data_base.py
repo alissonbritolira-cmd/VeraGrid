@@ -44,6 +44,7 @@ from VeraGrid.Gui.general_dialogues import (LogsDialogue, CustomQuestionDialogue
                                             NewConnectedDeviceDialogue, DeviceSelectorDialogue)
 from VeraGrid.Gui.DeviceEditors.device_editor_factory import build_device_editor_dialog
 from VeraGrid.Gui.Icons.icon_associations import device_type_icons
+from VeraGrid.Gui.Study.study_workspace import StudyWorkspace
 
 
 class DataBaseTableMain(DiagramsMain):
@@ -162,6 +163,24 @@ class DataBaseTableMain(DiagramsMain):
         self.ui.associationsComboBox.currentTextChanged.connect(self.on_associations_combo_box_change)
         self.ui.dbFilterComboBox.currentIndexChanged.connect(self.view_objects_data)
 
+        # This view edits the same native objects as the database; no diagram is needed.
+        self.study_workspace = StudyWorkspace(
+            circuit=lambda: self.circuit,
+            busy=self.any_thread_running,
+            parent=self.ui.mainTabWidget,
+            power_flow_action=self.ui.actionPower_flow,
+            show_results=lambda: self.ui.mainTabWidget.setCurrentWidget(self.ui.ResultsTab),
+            error_message=self.show_error_toast)
+        self.ui.mainTabWidget.insertTab(
+            self.ui.mainTabWidget.indexOf(self.ui.ResultsTab) + 1,
+            self.study_workspace, QtGui.QIcon(":/Icons/icons/edit.png"), self.tr("Study Mode"))
+        self.ui.mainTabWidget.currentChanged.connect(self.on_study_tab_changed)
+
+    def on_study_tab_changed(self, _index: int) -> None:
+        """Refresh objects after another view or case was used."""
+        if self.ui.mainTabWidget.currentWidget() is self.study_workspace:
+            self.study_workspace.refresh()
+
     def setup_objects_tree(self):
         """
         Setup the database left tree object
@@ -236,6 +255,10 @@ class DataBaseTableMain(DiagramsMain):
         """
         super().refresh_runtime_translations()
         self.setup_objects_tree()
+        if hasattr(self, "study_workspace"):
+            self.study_workspace.retranslate_ui()
+            self.ui.mainTabWidget.setTabText(
+                self.ui.mainTabWidget.indexOf(self.study_workspace), self.tr("Study Mode"))
 
     def setup_compiled_arrays_tree(self):
         """
