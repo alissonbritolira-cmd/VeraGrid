@@ -26,6 +26,7 @@ from VeraGridEngine.basic_structures import Logger
 from VeraGridEngine.IO.veragrid.generic_io_functions import parse_config_df, CustomJSONizer
 from VeraGridEngine.Simulations.driver_template import DriverToSave
 from VeraGridEngine.IO.veragrid.pack_unpack import gather_model_as_data_frames, gather_model_as_jsons
+from VeraGridEngine.IO.veragrid.result_store import ResultReader, ChunkedArray, write_array, INDEX_VERSION
 import VeraGridEngine.Devices as dev
 
 
@@ -286,6 +287,19 @@ def save_results_in_zip(f_zip_ptr: zipfile.ZipFile,
                 # get the array
                 arr = getattr(session_data.results, arr_name)
 
+                if arr_name == "values" and getattr(session_data.results, "archive_chunked", False):
+                    if not hasattr(f_zip_ptr, "_result_commit_callbacks"):
+                        f_zip_ptr._result_commit_callbacks = []
+                    prefix = filename.rsplit('/', 1)[0]
+                    descriptor = write_array(f_zip_ptr, prefix, arr, filename_zip)
+                    f_zip_ptr.writestr(prefix + '/result_index.json', json.dumps(dict(
+                        version=INDEX_VERSION, kind='rms_arrays', base_prefix=prefix,
+                        arrays={'values': descriptor}), separators=(',', ':')))
+                    continue
+                if isinstance(arr, ChunkedArray):
+                    # Explicit export back to the historical dense layout.
+                    arr = np.asarray(arr)
+
                 with BytesIO() as buffer:
                     # pack the array into a DataFrame
 
@@ -444,7 +458,7 @@ def _save_veragrid_data_to_zip_file(filename_zip: str,
                               json_files: Dict[str, dict],
                               text_func: Union[None, Callable[[str], None]] = None,
                               progress_func: Union[None, Callable[[float], None]] = None,
-                              logger=Logger()):
+                              logger=Logger(), result_archive_path: str | None = None):
     """
     Save a list of DataFrames to a zip file without saving to disk the csv files
     :param filename_zip: file name where to save all
@@ -459,6 +473,7 @@ def _save_veragrid_data_to_zip_file(filename_zip: str,
     n_failed = 0
     # open zip file for writing
     with zipfile.ZipFile(filename_zip, 'w', zipfile.ZIP_DEFLATED) as f_zip_ptr:
+        f_zip_ptr._result_commit_callbacks = []
 
         # save the config files ----------------------------------------------------------------------------------------
         for name, value in json_files.items():
@@ -469,7 +484,7 @@ def _save_veragrid_data_to_zip_file(filename_zip: str,
         save_single_circuit_data_to_zip(f_zip_ptr=f_zip_ptr,
                                         circuit=circuit,
                                         sessions_data=sessions_data,
-                                        filename_zip=filename_zip,
+                                        filename_zip=result_archive_path or filename_zip,
                                         text_func=text_func,
                                         progress_func=progress_func,
                                         logger=logger)
@@ -519,6 +534,7 @@ def _save_veragrid_data_to_zip_file(filename_zip: str,
 
     if n_failed:
         print('Failed to pickle several profiles, but saved them as csv.\nFor improved speed install Pandas >= 1.2')
+    return f_zip_ptr._result_commit_callbacks
 
 
 def save_veragrid_data_to_zip(filename_zip: str,
@@ -550,7 +566,7 @@ def save_veragrid_data_to_zip(filename_zip: str,
     os.close(temporary_fd)
     replaced: bool = False
     try:
-        _save_veragrid_data_to_zip_file(
+        result_callbacks = _save_veragrid_data_to_zip_file(
             filename_zip=temporary_name,
             circuit=circuit,
             sessions_data=sessions_data,
@@ -558,6 +574,7 @@ def save_veragrid_data_to_zip(filename_zip: str,
             text_func=text_func,
             progress_func=progress_func,
             logger=logger,
+            result_archive_path=str(target_path),
         )
         os.replace(temporary_name, target_path)
         replaced = True
@@ -567,6 +584,8 @@ def save_veragrid_data_to_zip(filename_zip: str,
         else:
             pass
     _rebind_manufacturer_native_sources(circuit=circuit, archive_path=str(target_path))
+    for callback in result_callbacks:
+        callback()
 
 def _save_veragrid_multiverse_data_to_zip_file(filename_zip: str,
                                          json_files: Dict[str, dict],
@@ -575,7 +594,7 @@ def _save_veragrid_multiverse_data_to_zip_file(filename_zip: str,
                                          active_sessions_data: List[DriverToSave] | None = None,
                                          text_func: Union[None, Callable[[str], None]] = None,
                                          progress_func: Union[None, Callable[[float], None]] = None,
-                                         logger=Logger()):
+                                         logger=Logger(), result_archive_path: str | None = None):
     """
     Save a list of DataFrames to a zip file without saving to disk the csv files
     :param filename_zip: file name where to save all
@@ -589,6 +608,7 @@ def _save_veragrid_multiverse_data_to_zip_file(filename_zip: str,
     n_failed = 0
     # open zip file for writing
     with zipfile.ZipFile(filename_zip, 'w', zipfile.ZIP_DEFLATED) as f_zip_ptr:
+        f_zip_ptr._result_commit_callbacks = []
 
         # save the config files ----------------------------------------------------------------------------------------
         for name, value in json_files.items():
@@ -598,7 +618,7 @@ def _save_veragrid_multiverse_data_to_zip_file(filename_zip: str,
         # save the multicircuit data------------------------------------------------------------------------------------
         save_multiverse_data_to_zip(f_zip_ptr=f_zip_ptr,
                                     multiverse=multiverse,
-                                    filename_zip=filename_zip,
+                                    filename_zip=result_archive_path or filename_zip,
                                     active_grid_idtag=active_grid_idtag,
                                     active_sessions_data=active_sessions_data,
                                     text_func=text_func,
@@ -607,6 +627,7 @@ def _save_veragrid_multiverse_data_to_zip_file(filename_zip: str,
 
     if n_failed:
         print('Failed to pickle several profiles, but saved them as csv.\nFor improved speed install Pandas >= 1.2')
+    return f_zip_ptr._result_commit_callbacks
 
 
 def save_veragrid_multiverse_data_to_zip(filename_zip: str,
@@ -640,7 +661,7 @@ def save_veragrid_multiverse_data_to_zip(filename_zip: str,
     os.close(temporary_fd)
     replaced: bool = False
     try:
-        _save_veragrid_multiverse_data_to_zip_file(
+        result_callbacks = _save_veragrid_multiverse_data_to_zip_file(
             filename_zip=temporary_name,
             json_files=json_files,
             multiverse=multiverse,
@@ -649,6 +670,7 @@ def save_veragrid_multiverse_data_to_zip(filename_zip: str,
             text_func=text_func,
             progress_func=progress_func,
             logger=logger,
+            result_archive_path=str(target_path),
         )
         os.replace(temporary_name, target_path)
         replaced = True
@@ -664,6 +686,14 @@ def save_veragrid_multiverse_data_to_zip(filename_zip: str,
     circuit: dev.MultiCircuit
     for circuit in saved_circuits.values():
         _rebind_manufacturer_native_sources(circuit=circuit, archive_path=str(target_path))
+    for callback in result_callbacks:
+        callback()
+    if active_grid_idtag is not None:
+        rebind_rms_archives(active_sessions_data, str(target_path),
+                            f"multiverse/{active_grid_idtag}/sessions")
+    for grid_idtag, drivers in saved_drivers.items():
+        if grid_idtag != active_grid_idtag or active_sessions_data is None:
+            rebind_rms_archives(drivers, str(target_path), f"multiverse/{grid_idtag}/sessions")
 
 def save_results_only(filename_zip: str,
                       sessions_data: List[DriverToSave],
@@ -797,6 +827,11 @@ def get_frames_from_zip(file_name_zip: str,
         # for each file in the zip file...
         for i, file_name in enumerate(names):
 
+            if (file_name.startswith("rms_results/") or file_name.endswith("/values.rms.json")
+                    or '/RMS Dynamic/values/' in file_name
+                    or file_name.endswith('/RMS Dynamic/result_index.json')):
+                continue  # Saved RMS traces are retrieved on demand with their session.
+
             # split the file name into name and extension
             path = file_name.split('/')
             name, extension = os.path.splitext(path[-1])
@@ -902,6 +937,11 @@ def get_frames_from_zip(file_name_zip: str,
         # for each file in the zip file...
         for i, file_name in enumerate(names):
 
+            if (file_name.startswith("rms_results/") or file_name.endswith("/values.rms.json")
+                    or '/RMS Dynamic/values/' in file_name
+                    or file_name.endswith('/RMS Dynamic/result_index.json')):
+                continue
+
             # split the file name into name and extension
             name, extension = os.path.splitext(file_name)
 
@@ -992,6 +1032,8 @@ def get_session_tree(file_name_zip: str):
     data = dict()
 
     for name in names:
+        if '/RMS Dynamic/values/' in name:
+            continue
         if '/' in name:
             path = name.split('/')
             session_entry = _split_session_entry_path(path=path, active_grid_idtag=active_grid_idtag)
@@ -1031,35 +1073,50 @@ def load_session_driver_objects(file_name_zip: str,
     except zipfile.BadZipFile:
         return dict()
 
-    data = dict()
-    active_grid_idtag: str | None = _get_active_multiverse_grid_idtag(zip_file_pointer)
-
-    # Traverse the zip names and pick all those that belong to the standard
-    # session tree or to the active multiverse scenario session tree.
-    for name in zip_file_pointer.namelist():
-        if '/' in name:
-            path = name.split('/')
-            session_entry = _split_session_entry_path(path=path, active_grid_idtag=active_grid_idtag)
-
-            if session_entry is not None:
-                path_session_name, path_study_name, path_array_name = session_entry
-
-                if session_name == path_session_name and study_name == path_study_name:
-                    # create a buffer to read the file
-                    file_pointer = zip_file_pointer.open(name)
-
-                    # split the file name into name and extension
-                    _, extension = os.path.splitext(name)
-                    arr_name = path_array_name.replace(extension, '')
-
-                    # read the data
-                    data[arr_name] = read_data_frame_from_zip(file_pointer, extension)
-                else:
-                    pass
-            else:
-                pass
-
-    return data
+    with zip_file_pointer:
+        data = dict()
+        active_grid_idtag = _get_active_multiverse_grid_idtag(zip_file_pointer)
+        # Only the requested standard session or active scenario is restored.
+        for name in zip_file_pointer.namelist():
+            if '/RMS Dynamic/values/' in name:
+                continue
+            session_entry = _split_session_entry_path(name.split('/'), active_grid_idtag)
+            if session_entry is None:
+                continue
+            path_session_name, path_study_name, path_array_name = session_entry
+            if session_name != path_session_name or study_name != path_study_name:
+                continue
+            _, extension = os.path.splitext(name)
+            if name.endswith('/RMS Dynamic/result_index.json'):
+                with zip_file_pointer.open(name) as stream:
+                    index = load_json_from_file_pointer(stream)
+                if (type(index.get('version')) is not int or index['version'] != INDEX_VERSION
+                        or index.get('kind') != 'rms_arrays'):
+                    raise ValueError('Unsupported RMS result index')
+                prefix = name.rsplit('/', 1)[0]
+                base = index.get('base_prefix', prefix)
+                reader = ResultReader(file_name_zip)
+                if base != prefix:
+                    reader = reader.with_prefix_alias(base, prefix)
+                # Extended development-specific irregular metadata is outside
+                # the upstream RMS data model; do not invent a partial restore.
+                if 'metadata' in index:
+                    raise ValueError('This RMS archive uses extended dynamic metadata unavailable in this build')
+                for key, descriptor in index['arrays'].items():
+                    if key in data:
+                        raise ValueError('Duplicate result payloads in saved session')
+                    if any(not block['member'].startswith(base + '/') for block in descriptor['blocks']):
+                        raise ValueError('RMS block is outside its saved session')
+                    array = ChunkedArray(reader, descriptor)
+                    reader.validate_members(descriptor['blocks'])
+                    data[key] = array
+                continue
+            arr_name = path_array_name.replace(extension, '')
+            if arr_name in data:
+                raise ValueError("Duplicate result payloads in saved session")
+            with zip_file_pointer.open(name) as file_pointer:
+                data[arr_name] = read_data_frame_from_zip(file_pointer, extension)
+        return data
 
 
 def get_xml_content(file_ptr: zipfile.ZipExtFile | BufferedReader) -> List[str]:

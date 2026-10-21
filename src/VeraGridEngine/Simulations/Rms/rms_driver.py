@@ -65,10 +65,15 @@ def _collect_rms_group_parameter_values(problem: RmsProblemDae | RmsProblemDaeVe
     return parameter_values
 
 
+from VeraGridEngine.Simulations.Rms.trajectory_store import (RmsTrajectoryStore, RmsStoredRows,
+    TrajectoryStorageError, preflight_storage, accepted_trajectory_values)
+
+
 class RmsSimulationDriver(DriverTemplate):
     __slots__ = (
         "pf_results",
         "options",
+        "trajectory_store",
         "problem",
     )
 
@@ -99,6 +104,7 @@ class RmsSimulationDriver(DriverTemplate):
         self.pf_results: PowerFlowResults = pf_results
 
         self.options = options
+        self.trajectory_store = None
 
         self.results: RmsResults | None = None
         self.problem: RmsProblemDae | None = None
@@ -112,7 +118,21 @@ class RmsSimulationDriver(DriverTemplate):
         :return:
         """
         # Run the dynamic simulation
-        self.run_time_simulation()
+        try:
+            self.run_time_simulation()
+        except Exception:
+            if self.trajectory_store is not None:
+                try:
+                    with self.trajectory_store.reader() as connection:
+                        confirmed = str(dict(connection.execute('SELECT id,committed FROM rms_groups')))
+                except Exception:
+                    confirmed = 'unknown; validate the recovery directory'
+                self.logger.add_error('RMS interrupted; inspect committed recovery samples',
+                                      value=str(self.trajectory_store.directory), expected_value=confirmed)
+            raise
+        finally:
+            if self.trajectory_store is not None:
+                self.trajectory_store.close()
 
     def run_time_simulation(self):
         """
@@ -126,6 +146,7 @@ class RmsSimulationDriver(DriverTemplate):
                              if self.grid.rms_events_groups is None
                              else self.grid.rms_events_groups)
 
+        preflight_storage(self.options)
         steps = int(np.ceil((self.options.simulation_time - 0) / self.options.time_step))
         t: Vec = np.arange(steps + 1) * self.options.time_step
 
@@ -168,7 +189,17 @@ class RmsSimulationDriver(DriverTemplate):
             initial_parameter_value_maps=[dict() for _ in range(len(rms_events_groups))],
             parameter_value_maps=[dict() for _ in range(len(rms_events_groups))],
             has_event_group_results=has_event_group_results,
+            allocate_values=self.options.trajectory_storage != "lossless_disk",
         )
+
+        self.results.valid_samples[:] = 0
+        if self.options.trajectory_storage == 'lossless_disk':
+            self.trajectory_store = RmsTrajectoryStore.create(
+                self.grid, self.options, self.results.variables, rms_events_groups)
+            self.results.runtime_storage = self.trajectory_store
+            self.results.trajectory_directory = str(self.trajectory_store.directory)
+            self.trajectory_store.put_json_stream('result_base', self.results.archive_dynamic_metadata())
+            self.logger.add_info('Experimental lossless RMS tiles', value=self.results.trajectory_directory)
 
         for group_idx, rms_events_group in enumerate(rms_events_groups):
 
@@ -278,6 +309,10 @@ class RmsSimulationDriver(DriverTemplate):
                             cancel_checker=self.is_cancel,
                         )
                 
+                if self.trajectory_store is not None:
+                    solver.set_trajectory_rows(self.trajectory_store.create_rows(str(rms_events_group.idtag),
+                                                       (steps + 1, problem.get_all_vars_number())))
+
                 native_session: ManufacturerNativeRuntimeSession | None = None
                 if len(self.grid.manufacturer_native_models) > 0:
                     native_session = ManufacturerNativeRuntimeSession(
@@ -296,18 +331,34 @@ class RmsSimulationDriver(DriverTemplate):
                 _t_start = time.time()
                 # Capture the complete scalar state before the solver applies
                 # any step or ramp belonging to this event group.
-                self.results.initial_parameter_value_maps[group_idx] = _collect_rms_group_parameter_values(
-                    problem=problem,
-                    grid=self.grid,
-                )
                 try:
+                    self.results.initial_parameter_value_maps[group_idx] = _collect_rms_group_parameter_values(
+                        problem=problem, grid=self.grid)
+                    self.results.execution_diagnostics[group_idx] = dict(status='running')
                     t, y, well_initialized, converged = solver.simulate()
+                except (ValueError, RuntimeError, FloatingPointError) as error:
+                    if self.trajectory_store is None:
+                        raise
+                    count = solver.y.accepted_count
+                    y = accepted_trajectory_values(solver.y, count)
+                    t = solver.t[:count]
+                    well_initialized = False
+                    converged = False
+                    self.results.execution_diagnostics[group_idx] = dict(
+                        status='trajectory_storage_failure' if isinstance(error, TrajectoryStorageError)
+                        else 'numerical_exception', reason=str(error), physical_instability_demonstrated=False)
+                    self.logger.add_error('RMS integration failed: ' + str(error), device=rms_events_group.name)
+
                 finally:
-                    problem._set_manufacturer_native_runtime_session(None)
-                    if native_session is not None:
-                        native_session.close()
-                    else:
-                        pass
+                    try:
+                        if self.trajectory_store is not None:
+                            accepted_trajectory_values(solver.y, solver.y.accepted_count)
+                    finally:
+                        try:
+                            problem._set_manufacturer_native_runtime_session(None)
+                        finally:
+                            if native_session is not None:
+                                native_session.close()
                 _t_end = time.time()
                 # print(f"RMS simulation time: {_t_end - _t_start:.4f} s")
 
@@ -316,14 +367,27 @@ class RmsSimulationDriver(DriverTemplate):
                 self.results.converged[group_idx] = converged and not was_cancelled
                 self.results.well_initialized[group_idx] = well_initialized
                 sample_count: int = min(self.results.values.shape[0], len(t), y.shape[0])
-                self.results.values[:sample_count, :, group_idx] = y[:sample_count, :]
-                if sample_count < self.results.values.shape[0]:
-                    self.results.values[sample_count:, :, group_idx] = np.nan
+                if self.trajectory_store is not None:
+                    sample_count = min(sample_count, solver.y.accepted_count)
+                if self.trajectory_store is None:
+                    self.results.values[:sample_count, :, group_idx] = y[:sample_count, :]
+                    if sample_count < self.results.values.shape[0]:
+                        self.results.values[sample_count:, :, group_idx] = np.nan
+                self.results.valid_samples[group_idx] = sample_count
+                self.results.regular_sample_times_s[group_idx] = t[:sample_count].tolist()
+                if self.trajectory_store is not None:
+                    self.results.values.attach(group_idx, y, sample_count)
+                if self.results.execution_diagnostics[group_idx].get('status') in ('not_executed', 'running'):
+                    self.results.execution_diagnostics[group_idx] = dict(
+                        status='cancelled' if was_cancelled else 'complete' if converged else 'numerical_failure')
                 self.results.has_event_group_results[group_idx] = sample_count > 0
                 self.results.parameter_value_maps[group_idx] = _collect_rms_group_parameter_values(
                     problem=problem,
                     grid=self.grid,
                 )
+
+                if self.trajectory_store is not None:
+                    self.trajectory_store.capture_results(self.results)
 
                 # The integrator returns its accepted prefix on cancellation.
                 # Publish that prefix before leaving, without reporting convergence.

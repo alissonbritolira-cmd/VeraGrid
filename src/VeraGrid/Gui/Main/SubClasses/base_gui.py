@@ -618,6 +618,9 @@ class BaseMainGui(QMainWindow):
         :return: list of all threads
         """
         all_threads: List[QtCore.QThread | None] = self.get_simulation_threads() + self.get_process_threads()
+        recovery_worker = getattr(self, 'rms_recovery_worker', None)
+        if recovery_worker is not None:
+            all_threads.append(recovery_worker)
         return all_threads
 
     def stop_all_threads(self) -> bool:
@@ -640,6 +643,7 @@ class BaseMainGui(QMainWindow):
                     pass
 
                 if thread.isRunning():
+                    thread.requestInterruption()
                     thread.quit()
                     stopped: bool = thread.wait(5000)
                 else:

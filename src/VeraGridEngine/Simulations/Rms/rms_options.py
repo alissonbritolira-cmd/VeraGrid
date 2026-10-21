@@ -37,12 +37,16 @@ class RmsOptions(OptionsTemplate):
         "fmi_me_max_runtime_evaluations_per_step",
         "verbose",
         "rms_event_groups",
+        "trajectory_storage",
+        "trajectory_directory",
     )
 
     LOCAL_PROPERTY_DECLARATIONS: Tuple[GCProp, ...] = (
         GCProp(key="integration_method", tpe=DynamicIntegrationMethod),
         GCProp(key="initialization_method", tpe=RmsInitializationMethod),
         GCProp(key="problem_type", tpe=RmsProblemTypes),
+        GCProp(key="trajectory_storage", tpe=str),
+        GCProp(key="trajectory_directory", tpe=str),
         GCProp(key="time_step", tpe=float),
         GCProp(key="simulation_time", tpe=float),
         GCProp(key="tolerance", tpe=float),
@@ -76,7 +80,9 @@ class RmsOptions(OptionsTemplate):
                  fmi_me_newton_relative_tolerance: float = 1e-8,
                  fmi_me_newton_max_iterations: int = 20,
                  fmi_me_max_continuous_states: int = 128,
-                 fmi_me_max_runtime_evaluations_per_step: int = 100000) -> None:
+                 fmi_me_max_runtime_evaluations_per_step: int = 100000,
+                 trajectory_storage: str = "memory",
+                 trajectory_directory: str = "") -> None:
         """
         RmsOptions
         :param time_step: time step of the simulations (s)
@@ -100,6 +106,12 @@ class RmsOptions(OptionsTemplate):
         self.integration_method: DynamicIntegrationMethod = integration_method
         self.initialization_method: RmsInitializationMethod = initialization_method
         self.problem_type: RmsProblemTypes = problem_type
+        if trajectory_storage not in ('memory', 'lossless_disk'):
+            raise ValueError('RMS trajectory storage must be memory or lossless_disk')
+        if not isinstance(trajectory_directory, str):
+            raise ValueError('RMS recovery directory must be a string')
+        self.trajectory_storage = trajectory_storage
+        self.trajectory_directory = trajectory_directory
         self.time_step: float = time_step
         self.simulation_time: float = simulation_time
         self.tolerance: float = tolerance

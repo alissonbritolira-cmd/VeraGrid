@@ -1136,6 +1136,9 @@ class SimulationsMain(TimeEventsMain):
             problem_type=self.ui.rms_problem_comboBox.currentData()
         )
 
+        ops.trajectory_storage = 'lossless_disk' if self.ui.rms_disk_storage.isChecked() else 'memory'
+        ops.trajectory_directory = self.ui.rms_recovery_directory.text().strip()
+
         return ops
 
     def get_selected_rms_small_signal_stability_options(self) -> sim.RmsSmallSignalStabilityOptions:

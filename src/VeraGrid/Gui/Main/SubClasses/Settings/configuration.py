@@ -125,6 +125,8 @@ def gui_struct_to_data(data_: Dict[str, Union[float, int, str, bool, Dict[str, U
             data_[key] = value.isChecked()
         elif isinstance(value, QtWidgets.QRadioButton):
             data_[key] = value.isChecked()
+        elif isinstance(value, QtWidgets.QLineEdit):
+            data_[key] = value.text()
         elif isinstance(value, str):
             data_[key] = value
         elif isinstance(value, int):
@@ -177,6 +179,10 @@ def config_data_to_struct(data_: Dict[str, Union[Dict[str, Any], str, Any]],
             elif isinstance(object_to_set, QtWidgets.QRadioButton):
                 object_to_set.setChecked(bool(corresponding_data))
 
+            elif isinstance(object_to_set, QtWidgets.QLineEdit):
+                if isinstance(corresponding_data, str):
+                    object_to_set.setText(corresponding_data)
+
             elif isinstance(object_to_set, str):
                 pass
             elif isinstance(object_to_set, float):
@@ -204,6 +210,9 @@ class ConfigurationMain(ResultsMain):
 
         # create main window
         ResultsMain.__init__(self, parent)
+
+        from VeraGrid.Gui.Main.SubClasses.Settings.rms_storage import install_rms_storage_controls
+        install_rms_storage_controls(self)
 
         # plugins
         self.plugins_info = PluginsInfo()
@@ -626,6 +635,8 @@ class ConfigurationMain(ResultsMain):
                 # "cgmes_dc_as_hvdclines": self.ui.cgmes_dc_as_hvdclines_checkBox,
             },
             "dyn": {
+                "rms_disk_storage": self.ui.rms_disk_storage,
+                "rms_recovery_directory": self.ui.rms_recovery_directory,
                 "rms_int_method_comboBox": self.ui.rms_integration_method_comboBox,
                 "rms_initialization_method": self.ui.rms_initialization_method_comboBox,
                 "tolerance_rms_spinBox": self.ui.tolerance_rms_spinBox,

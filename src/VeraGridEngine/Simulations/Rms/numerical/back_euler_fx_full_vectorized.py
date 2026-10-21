@@ -17,6 +17,7 @@ from VeraGridEngine.Simulations.Rms.problems.rms_problem_template import (
 )
 from VeraGridEngine.Utils.Sparse.csc import pack_4_by_4_scipy
 from VeraGridEngine.basic_structures import Vec, Mat
+from VeraGridEngine.Simulations.Rms.trajectory_store import accept_trajectory_rows, accepted_trajectory_values
 
 
 class BackEulerImplicitIntegrationFullVec:
@@ -34,6 +35,7 @@ class BackEulerImplicitIntegrationFullVec:
         "tol",
         "_cancel_checker",
         "_timings",
+        "accepted_samples",
         "_jacobian_may_reuse_residual_gather",
         "_residual_gather_dx_reference",
         "_residual_gather_x_reference",
@@ -74,7 +76,8 @@ class BackEulerImplicitIntegrationFullVec:
         self.max_iter_0 = max_iter
         self.steps = int(np.ceil((t_end - t0) / h))
         self.t: Vec = np.empty(self.steps + 1)
-        self.y: Mat = np.empty((self.steps + 1, self.problem.get_all_vars_number()))
+        self.y: Mat | None = None
+        self.accepted_samples = 0
         self.tol = tolerance
         self._cancel_checker: Callable[[], bool] | None = cancel_checker
         self._state_identity: sp.csc_matrix | None = None
@@ -191,6 +194,12 @@ class BackEulerImplicitIntegrationFullVec:
 
         return J
 
+    def set_trajectory_rows(self, rows):
+        """Use an accepted-row sink before starting integration."""
+        if self.y is not None:
+            raise ValueError('RMS trajectory storage is already configured')
+        self.y = rows
+
     def simulate(self):
         """
 
@@ -252,7 +261,11 @@ class BackEulerImplicitIntegrationFullVec:
         dx = dx0.copy()
         dx_last = dx0.copy()
         residual = 0.0
+        if self.y is None:
+            self.y = np.empty((self.steps + 1, self.problem.get_all_vars_number()))
         self.y[0, :] = x0.copy()
+        self.accepted_samples = 1
+        accept_trajectory_rows(self.y, self.accepted_samples, self.t)
 
         has_fmu_cs = True
         has_fmu_me = True
@@ -270,7 +283,7 @@ class BackEulerImplicitIntegrationFullVec:
         try:
             for step_idx in range(self.steps):
                 if self._cancel_checker is not None and self._cancel_checker():
-                    return self.t[:step_idx + 1].copy(), self.y[:step_idx + 1, :].copy(), well_initialized, converged
+                    return self.t[:step_idx + 1].copy(), accepted_trajectory_values(self.y, self.accepted_samples, copy=True), well_initialized, converged
 
                 self.problem.report_progress2(step_idx, self.steps)
 
@@ -460,6 +473,8 @@ class BackEulerImplicitIntegrationFullVec:
                 lag_update_start = time.time()
                 self.y[step_idx + 1, :] = x_prev
                 self.t[step_idx + 1] = t_macro_target
+                self.accepted_samples = step_idx + 2
+                accept_trajectory_rows(self.y, self.accepted_samples, self.t)
 
                 lag_update_end = time.time()
                 timings["lag_update_time"] += lag_update_end - lag_update_start
@@ -470,4 +485,4 @@ class BackEulerImplicitIntegrationFullVec:
             if has_fmu_me:
                 self.problem.close_fmu_me_devices()
 
-        return self.t, self.y, well_initialized, converged
+        return self.t[:self.accepted_samples], accepted_trajectory_values(self.y, self.accepted_samples), well_initialized, converged
