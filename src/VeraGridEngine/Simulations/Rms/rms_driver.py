@@ -182,6 +182,11 @@ class RmsSimulationDriver(DriverTemplate):
 
                 self.progress_signal.emit(5)
 
+                if self.is_cancel():
+                    self.results.cancelled[group_idx] = True
+                    self.report_text("Cancelled!")
+                    return
+
                 self.report_text("Simulating RMS event group " + rms_events_group.name)
                 problem.set_events_group(rms_events_group=rms_events_group)
                 problem.reset_boundary_update_state(0.0)
@@ -306,13 +311,11 @@ class RmsSimulationDriver(DriverTemplate):
                 _t_end = time.time()
                 # print(f"RMS simulation time: {_t_end - _t_start:.4f} s")
 
-                if self.is_cancel():
-                    self.report_text("Cancelled!")
-                    return
-
-                self.results.converged[group_idx] = converged
+                was_cancelled = self.is_cancel()
+                self.results.cancelled[group_idx] = was_cancelled
+                self.results.converged[group_idx] = converged and not was_cancelled
                 self.results.well_initialized[group_idx] = well_initialized
-                sample_count: int = min(self.results.values.shape[0], y.shape[0])
+                sample_count: int = min(self.results.values.shape[0], len(t), y.shape[0])
                 self.results.values[:sample_count, :, group_idx] = y[:sample_count, :]
                 if sample_count < self.results.values.shape[0]:
                     self.results.values[sample_count:, :, group_idx] = np.nan
@@ -321,6 +324,18 @@ class RmsSimulationDriver(DriverTemplate):
                     problem=problem,
                     grid=self.grid,
                 )
+
+                # The integrator returns its accepted prefix on cancellation.
+                # Publish that prefix before leaving, without reporting convergence.
+                if was_cancelled:
+                    last_time = f"{t[sample_count - 1]:g} s" if sample_count else "none"
+                    self.logger.add_warning(
+                        f"RMS cancelled after {sample_count} accepted samples; "
+                        f"last completed time is {last_time}",
+                        device=rms_events_group.name,
+                    )
+                    self.report_text("Cancelled!")
+                    return
 
                 if not well_initialized:
                     self.logger.add_warning("Not well initialized", device=rms_events_group.name)

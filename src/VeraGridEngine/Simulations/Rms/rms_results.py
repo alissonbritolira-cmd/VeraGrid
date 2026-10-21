@@ -23,6 +23,7 @@ class RmsResults(ResultsTemplate):
         ResultsProperty(name='has_event_group_results', tpe=BoolVec, old_names=list(), expandable=False),
         ResultsProperty(name='well_initialized', tpe=BoolVec, old_names=list(), expandable=False),
         ResultsProperty(name='converged', tpe=BoolVec, old_names=list(), expandable=False),
+        ResultsProperty(name='cancelled', tpe=BoolVec, old_names=list(), expandable=False),
         ResultsProperty(name='dynamic_metadata_json', tpe=StrVec, old_names=list(), expandable=False),
     )
 
@@ -35,6 +36,7 @@ class RmsResults(ResultsTemplate):
         "has_event_group_results",
         "well_initialized",
         "converged",
+        "cancelled",
         "dynamic_metadata_json",
         "variables",
         "uid2vars_glob_name",
@@ -105,6 +107,7 @@ class RmsResults(ResultsTemplate):
 
         self.well_initialized = np.zeros(self.ng, dtype=bool)
         self.converged = np.zeros(self.ng, dtype=bool)
+        self.cancelled = np.zeros(self.ng, dtype=bool)
         self.dynamic_metadata_json = np.array([""], dtype=str)
 
         self.variables = variables
@@ -229,12 +232,15 @@ class RmsResults(ResultsTemplate):
             for parameter_map in metadata.get("initial_parameter_value_maps", list())
         ]
 
-        if len(self.initial_parameter_value_maps) == self.ng:
+        # Session restoration fills the arrays before consolidating dimensions;
+        # an empty result shell still has ng=0 at this point.
+        group_count = int(self.values.shape[2]) if self.values.ndim >= 3 else 0
+        if len(self.initial_parameter_value_maps) == group_count:
             pass
         else:
             self.initial_parameter_value_maps = list()
             group_index: int
-            for group_index in range(self.ng):
+            for group_index in range(group_count):
                 self.initial_parameter_value_maps.append(dict())
 
     def get_var(self, uid: int) -> Var:
@@ -337,6 +343,10 @@ class RmsResults(ResultsTemplate):
         self.nt = int(self.values.shape[0]) if self.values.ndim >= 1 else 0
         self.nv = int(self.values.shape[1]) if self.values.ndim >= 2 else 0
         self.ng = int(self.values.shape[2]) if self.values.ndim >= 3 else 0
+
+        # Older archives did not distinguish cancellation from other partial runs.
+        if len(self.cancelled) == 0:
+            self.cancelled = np.zeros(self.ng, dtype=bool)
 
         if len(self.rms_events_group_names) == 0 and len(self.rms_events_group_idtags) > 0:
             self.rms_events_group_names = np.array(self.rms_events_group_idtags, dtype=str)

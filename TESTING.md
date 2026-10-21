@@ -23,6 +23,19 @@ python -m pytest src/tests/FileFormats
 python -m pytest src/tests/GUI
 ```
 
+For RMS cancellation coverage:
+
+```bash
+python -m pytest src/tests/RMS/test_rms_cancelled_results.py src/tests/GUI/test_rms_cancelled_workflow.py
+```
+
+For a manual check, start RMS from a converged power flow, cancel during
+integration, and inspect a variable curve. The accepted prefix should remain
+available, the unused tail should be NaN, and the GUI should report cancellation
+with partial results. Save with results enabled, reopen the file, and load the
+saved RMS study through its context menu. The same samples and cancellation
+status should be restored. A new RMS run should still complete normally.
+
 ## Test policy
 
 As major new functionality is added, automated tests should be added with it.

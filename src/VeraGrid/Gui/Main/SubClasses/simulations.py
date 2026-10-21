@@ -4126,7 +4126,14 @@ class SimulationsMain(TimeEventsMain):
         self.remove_simulation(SimulationTypes.RmsDynamic_run)
         self.update_available_results()
 
-        if results is not None:
+        if drv is not None and drv.is_cancel():
+            if results is not None and np.any(results.has_event_group_results):
+                message = self.tr("RMS cancelled with partial results")
+            else:
+                message = self.tr("RMS cancelled before producing results")
+            self.ui.progress_label.setText(message)
+            self.show_warning_toast(message)
+        elif results is not None:
             # Only active event groups are simulated, so the completion report
             # must ignore inactive groups whose default result flags remain False.
             active_group_indices: list[int] = list()
