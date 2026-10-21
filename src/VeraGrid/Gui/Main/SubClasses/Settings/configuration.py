@@ -204,6 +204,7 @@ class ConfigurationMain(ResultsMain):
 
         # create main window
         ResultsMain.__init__(self, parent)
+        self.create_rms_archive_controls()
 
         # plugins
         self.plugins_info = PluginsInfo()
@@ -226,6 +227,21 @@ class ConfigurationMain(ResultsMain):
 
         self.plugin_windows_list = list()
         self.translation_controller: ApplicationTranslator | None = None
+
+    def create_rms_archive_controls(self) -> None:
+        """Add an opt-in saved-RMS format without editing generated UI code."""
+        self.rms_chunked_results_checkBox = QtWidgets.QCheckBox(
+            self.tr("Save RMS channels in chunks (experimental)"), self.ui.frame_77)
+        self.rms_chunked_results_checkBox.setObjectName("rmsChunkedResultsCheckBox")
+        self.rms_chunked_results_checkBox.setToolTip(self.tr(
+            "Load only selected RMS channels when reopening results. "
+            "Older VeraGrid versions cannot read this optional result layout. "
+            "Uncheck to save the historical dense format."))
+        self.ui.label_155.hide()
+        self.ui.gridLayout_11.removeWidget(self.ui.label_155)
+        self.ui.gridLayout_11.addWidget(self.rms_chunked_results_checkBox, 8, 0, 1, 2)
+        self.rms_chunked_results_checkBox.setEnabled(self.ui.saveResultsCheckBox.isChecked())
+        self.ui.saveResultsCheckBox.toggled.connect(self.rms_chunked_results_checkBox.setEnabled)
 
     def create_language_controls(self) -> None:
         """
@@ -618,6 +634,7 @@ class ConfigurationMain(ResultsMain):
             },
             "file": {
                 "store_results_in_file": self.ui.saveResultsCheckBox,
+                "rms_chunked_results": self.rms_chunked_results_checkBox,
                 # "current_boundary_set": self.current_boundary_set,
                 # "cgmes_selected_version": self.ui.cgmes_version_comboBox,
                 # "cgmes_single_profile_per_file": self.ui.cgmes_single_profile_per_file_checkBox,

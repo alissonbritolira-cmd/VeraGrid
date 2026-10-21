@@ -26,6 +26,7 @@ from VeraGridEngine.basic_structures import Logger
 from VeraGridEngine.IO.veragrid.generic_io_functions import parse_config_df, CustomJSONizer
 from VeraGridEngine.Simulations.driver_template import DriverToSave
 from VeraGridEngine.IO.veragrid.pack_unpack import gather_model_as_data_frames, gather_model_as_jsons
+from VeraGridEngine.IO.veragrid.rms_archive import ZipRmsValues, write_rms_values, rebind_rms_archives
 import VeraGridEngine.Devices as dev
 
 
@@ -285,6 +286,14 @@ def save_results_in_zip(f_zip_ptr: zipfile.ZipFile,
 
                 # get the array
                 arr = getattr(session_data.results, arr_name)
+
+                chunk_rows = getattr(session_data.results, "archive_chunk_rows", 0)
+                if arr_name == "values" and chunk_rows > 0:
+                    write_rms_values(f_zip_ptr, filename + ".rms.json", arr, chunk_rows)
+                    continue
+                if isinstance(arr, ZipRmsValues):
+                    # Explicit export back to the historical dense layout.
+                    arr = np.asarray(arr)
 
                 with BytesIO() as buffer:
                     # pack the array into a DataFrame
@@ -567,6 +576,7 @@ def save_veragrid_data_to_zip(filename_zip: str,
         else:
             pass
     _rebind_manufacturer_native_sources(circuit=circuit, archive_path=str(target_path))
+    rebind_rms_archives(sessions_data, str(target_path))
 
 def _save_veragrid_multiverse_data_to_zip_file(filename_zip: str,
                                          json_files: Dict[str, dict],
@@ -664,6 +674,12 @@ def save_veragrid_multiverse_data_to_zip(filename_zip: str,
     circuit: dev.MultiCircuit
     for circuit in saved_circuits.values():
         _rebind_manufacturer_native_sources(circuit=circuit, archive_path=str(target_path))
+    if active_grid_idtag is not None:
+        rebind_rms_archives(active_sessions_data, str(target_path),
+                            f"multiverse/{active_grid_idtag}/sessions")
+    for grid_idtag, drivers in saved_drivers.items():
+        if grid_idtag != active_grid_idtag or active_sessions_data is None:
+            rebind_rms_archives(drivers, str(target_path), f"multiverse/{grid_idtag}/sessions")
 
 def save_results_only(filename_zip: str,
                       sessions_data: List[DriverToSave],
@@ -797,6 +813,9 @@ def get_frames_from_zip(file_name_zip: str,
         # for each file in the zip file...
         for i, file_name in enumerate(names):
 
+            if file_name.startswith("rms_results/") or file_name.endswith("/values.rms.json"):
+                continue  # Saved RMS traces are retrieved on demand with their session.
+
             # split the file name into name and extension
             path = file_name.split('/')
             name, extension = os.path.splitext(path[-1])
@@ -901,6 +920,9 @@ def get_frames_from_zip(file_name_zip: str,
 
         # for each file in the zip file...
         for i, file_name in enumerate(names):
+
+            if file_name.startswith("rms_results/") or file_name.endswith("/values.rms.json"):
+                continue
 
             # split the file name into name and extension
             name, extension = os.path.splitext(file_name)
@@ -1031,35 +1053,27 @@ def load_session_driver_objects(file_name_zip: str,
     except zipfile.BadZipFile:
         return dict()
 
-    data = dict()
-    active_grid_idtag: str | None = _get_active_multiverse_grid_idtag(zip_file_pointer)
-
-    # Traverse the zip names and pick all those that belong to the standard
-    # session tree or to the active multiverse scenario session tree.
-    for name in zip_file_pointer.namelist():
-        if '/' in name:
-            path = name.split('/')
-            session_entry = _split_session_entry_path(path=path, active_grid_idtag=active_grid_idtag)
-
-            if session_entry is not None:
-                path_session_name, path_study_name, path_array_name = session_entry
-
-                if session_name == path_session_name and study_name == path_study_name:
-                    # create a buffer to read the file
-                    file_pointer = zip_file_pointer.open(name)
-
-                    # split the file name into name and extension
-                    _, extension = os.path.splitext(name)
-                    arr_name = path_array_name.replace(extension, '')
-
-                    # read the data
-                    data[arr_name] = read_data_frame_from_zip(file_pointer, extension)
-                else:
-                    pass
+    with zip_file_pointer:
+        data = dict()
+        active_grid_idtag = _get_active_multiverse_grid_idtag(zip_file_pointer)
+        # Only the requested standard session or active scenario is restored.
+        for name in zip_file_pointer.namelist():
+            session_entry = _split_session_entry_path(name.split('/'), active_grid_idtag)
+            if session_entry is None:
+                continue
+            path_session_name, path_study_name, path_array_name = session_entry
+            if session_name != path_session_name or study_name != path_study_name:
+                continue
+            _, extension = os.path.splitext(name)
+            arr_name = "values" if name.endswith("/values.rms.json") else path_array_name.replace(extension, '')
+            if arr_name in data:
+                raise ValueError("Duplicate result payloads in saved session")
+            if name.endswith("/values.rms.json"):
+                data[arr_name] = ZipRmsValues(file_name_zip, name, archive=zip_file_pointer)
             else:
-                pass
-
-    return data
+                with zip_file_pointer.open(name) as file_pointer:
+                    data[arr_name] = read_data_frame_from_zip(file_pointer, extension)
+        return data
 
 
 def get_xml_content(file_ptr: zipfile.ZipExtFile | BufferedReader) -> List[str]:

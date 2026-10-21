@@ -36,6 +36,42 @@ with partial results. Save with results enabled, reopen the file, and load the
 saved RMS study through its context menu. The same samples and cancellation
 status should be restored. A new RMS run should still complete normally.
 
+### Optional indexed RMS archives
+
+In **Settings > File**, enable **Save results in .veragrid files** and then
+**Save RMS channels in chunks (experimental)**. Save a completed or cancelled
+RMS study, reopen it, and load its saved RMS result through the context menu.
+Open one variable curve and a multi-variable plot group. The values, accepted
+prefix, group availability, cancellation flags and parameter-derived curves
+must match the dense archive. Save again to the same file and consult another
+curve without reopening. Disable chunked saving to export the historical dense
+layout and confirm that this archive still opens in an older version.
+While a current result still reads from a source archive, overwriting that
+archive without results is refused by the GUI. Enable result saving or use
+Save As. Engine callers are responsible for retaining source archives used by
+their lazy result objects.
+
+The checkbox is off by default. The optional layout is versioned and stores
+float64 NPY row chunks independently for each variable and event group, with a
+SHA-256 index. Opening a saved session restores the small metadata immediately;
+plotting reads the requested channels. It does not reduce the integration
+driver's memory, recover an interrupted unsaved simulation, or resume a solver.
+Older builds cannot read this optional RMS result layout; their ordinary dense
+archives remain readable and the default writer is unchanged.
+
+Engine callers can opt in with `results.archive_chunk_rows = 131072` before
+saving. Supported counts are 1..131072; the current implementation caps an index
+at 50000 chunks and 16 MiB. Indexed tensors support integer/slice indexing;
+`np.asarray(results.values)` explicitly loads the entire tensor. No files are
+extracted and no pickle payloads are used. A missing/changed source archive or
+invalid chunk raises an error instead of substituting a safe-looking curve.
+
+Focused automated coverage (Qt tests are separate from desktop acceptance):
+
+```bash
+python -m pytest src/tests/RMS/test_rms_archive.py src/tests/GUI/test_rms_archive_options.py src/tests/Base/test_dynamic_results_save_load.py
+```
+
 ## Test policy
 
 As major new functionality is added, automated tests should be added with it.

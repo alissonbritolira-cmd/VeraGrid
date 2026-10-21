@@ -37,6 +37,7 @@ from VeraGridEngine.Devices.multiverse import MultiVerse, ScenarioNode
 from VeraGridEngine.Compilers.circuit_to_pgm import PGM_AVAILABLE
 from VeraGridEngine.IO.file_save import FileSavingOptions
 from VeraGridEngine.IO.file_open import determine_file_type, FileOpen
+from VeraGridEngine.IO.veragrid.rms_archive import would_discard_rms_source
 from VeraGridEngine.basic_structures import Logger
 from VeraGridEngine.enumerations import SimulationTypes, FileType
 from VeraGridEngine.IO.veragrid.contingency_parser import import_contingencies_from_json, export_contingencies_json_file
@@ -1320,6 +1321,10 @@ class IoMain(ScenariosMain):
 
         # get save data
         sessions_data = self.session.get_save_data() if self.ui.saveResultsCheckBox.isChecked() else list()
+        for session in sessions_data:
+            if session.tpe == SimulationTypes.RmsDynamic_run and session.results is not None:
+                session.results.archive_chunk_rows = (
+                    131072 if self.rms_chunked_results_checkBox.isChecked() else 0)
 
         # get json files to store
         json_files = {"gui_config": self.get_gui_config_data()}
@@ -1362,6 +1367,12 @@ class IoMain(ScenariosMain):
 
             options2 = self.get_file_save_options() if options is None else options
             options2.type_selected = type_selected
+            if would_discard_rms_source(self.session.get_save_data(), options2.sessions_data, filename):
+                warning_msg(self.tr(
+                    "The current RMS curves still use this file. Enable saving results, "
+                    "or use Save As to keep their source archive available."))
+                self.UNLOCK()
+                return
 
             self.save_file_thread_object = filedrv.FileSaveThread(
                 circuit=self.circuit if grid is None else grid,

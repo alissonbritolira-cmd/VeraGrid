@@ -47,6 +47,7 @@ class RmsResults(ResultsTemplate):
         "vars_glob_name2uid",
         "variable_array",
         "values",
+        "archive_chunk_rows",
     )
 
     def __init__(self,
@@ -131,7 +132,22 @@ class RmsResults(ResultsTemplate):
         self.vars_glob_name2uid = vars_glob_name2uid
         self.variable_array = np.array([self.uid2vars_glob_name[var.uid] for var in variables], dtype=str)
         self.values = np.zeros((self.nt, self.nv, self.ng), dtype=float)
+        # Opt-in saved-result layout; zero retains the historical dense NPY.
+        self.archive_chunk_rows = 0
         self.prepare_for_saving()
+
+    def parse_saved_data(self, grid, data_dict, logger=None) -> None:
+        """Restore indexed values without the generic parser materializing them."""
+        from VeraGridEngine.IO.veragrid.rms_archive import ZipRmsValues
+        from VeraGridEngine.basic_structures import Logger
+        lazy = data_dict.get("values")
+        if isinstance(lazy, ZipRmsValues):
+            metadata = {name: value for name, value in data_dict.items() if name != "values"}
+            super().parse_saved_data(grid, metadata, logger if logger is not None else Logger())
+            self.values = lazy
+            self.archive_chunk_rows = lazy.chunk_rows
+        else:
+            super().parse_saved_data(grid, data_dict, logger if logger is not None else Logger())
 
     def _build_dynamic_metadata_payload(self) -> Dict[str, object]:
         """
