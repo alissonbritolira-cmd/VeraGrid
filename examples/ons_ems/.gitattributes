@@ -1,0 +1,3 @@
+# Preserve the contributor-supplied state-estimator files byte for byte.
+*.stm -text
+*.prm -text

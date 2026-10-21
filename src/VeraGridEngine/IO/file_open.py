@@ -77,6 +77,9 @@ class FileOpenOptions:
         "dgs_use_vsc_for_injections",
         "dgs_use_dynamic_information",
         "dgs_dynamic_simulation_mode",
+        "ems_prm_path",
+        "ems_frequency_hz",
+        "ems_apply_prm_pf",
     )
 
     def __init__(self,
@@ -98,6 +101,9 @@ class FileOpenOptions:
                  dgs_use_vsc_for_injections: bool = False,
                  dgs_use_dynamic_information: bool = False,
                  dgs_dynamic_simulation_mode: DynamicSimulationMode | None = None,
+                 ems_prm_path: str | None = None,
+                 ems_frequency_hz: float = 60.0,
+                 ems_apply_prm_pf: bool = False,
                  ):
         """
         :param file_type: FileType to load, none is unsure
@@ -143,6 +149,9 @@ class FileOpenOptions:
         self.dgs_use_vsc_for_injections: bool = dgs_use_vsc_for_injections
         self.dgs_use_dynamic_information: bool = dgs_use_dynamic_information
         self.dgs_dynamic_simulation_mode: DynamicSimulationMode | None = dgs_dynamic_simulation_mode
+        self.ems_prm_path = ems_prm_path
+        self.ems_frequency_hz = ems_frequency_hz
+        self.ems_apply_prm_pf = ems_apply_prm_pf
 
 
 def open_cgmes(files: List[str] | str,
@@ -243,6 +252,9 @@ def determine_file_type(file_name: List[str] | str) -> FileType | None:
     if isinstance(file_name, list):
         suffixes = {pathlib.Path(f).suffix.lower() for f in file_name}
 
+        if '.stm' in suffixes and suffixes <= {'.stm', '.prm'}:
+            return FileType.ONS_EMS_STM
+
         if {'.ech', '.dta'}.issubset(suffixes):
             return FileType.Eurostag
 
@@ -314,6 +326,9 @@ def determine_file_type(file_name: List[str] | str) -> FileType | None:
 
         elif file_extension == '.pwf':
             return FileType.PWF
+
+        elif file_extension == '.stm':
+            return FileType.ONS_EMS_STM
 
         elif file_extension == '.json':
             if is_pandapower_file(file_name):
@@ -595,6 +610,20 @@ class FileOpen:
             self.circuit = parse_json(self.file_name)
 
         # --- Common Power Flow Formats ---
+        elif self.file_type == FileType.ONS_EMS_STM:
+            from VeraGridEngine.IO.ons_ems.stm_parser import open_stm
+            files = self.file_name if isinstance(self.file_name, list) else [self.file_name]
+            stm_files = [f for f in files if pathlib.Path(f).suffix.lower() == '.stm']
+            prm_files = [f for f in files if pathlib.Path(f).suffix.lower() == '.prm']
+            if len(stm_files) != 1 or len(prm_files) > 1 or len(stm_files) + len(prm_files) != len(files):
+                raise ValueError('Select exactly one STM and at most one optional PRM file.')
+            selected_prm = self.options.ems_prm_path
+            if selected_prm is None and prm_files:
+                selected_prm = prm_files[0]
+            self.circuit = open_stm(stm_files[0], prm_path=selected_prm,
+                                    frequency_hz=self.options.ems_frequency_hz,
+                                    logger=self.logger)
+
         elif self.file_type == FileType.Matpower:
             if isinstance(self.file_name, str):
                 m_grid = MatpowerCircuit()

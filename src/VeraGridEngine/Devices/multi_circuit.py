@@ -641,6 +641,7 @@ class MultiCircuit(Assets):
         'name',
         'idtag',
         'comments',
+        'import_metadata',
         'model_version',
         'user_name',
         'Sbase',
@@ -671,6 +672,9 @@ class MultiCircuit(Assets):
             self.idtag: str = idtag
 
         self.comments: str = ''
+        # Optional import provenance travels with the native circuit metadata.
+        # It is descriptive data; loading it never executes source commands.
+        self.import_metadata: dict = {}
 
         # this is a number that serves
         self.model_version: int = 2
@@ -695,6 +699,7 @@ class MultiCircuit(Assets):
         return {
             'name': self.name,
             'comments': self.comments,
+            'import_metadata': copy.deepcopy(self.import_metadata),
             'model_version': self.model_version,
             'user_name': self.user_name,
             'Sbase': self.Sbase,
@@ -710,6 +715,8 @@ class MultiCircuit(Assets):
         """
         self.name = data.get("name", self.name)
         self.comments = data.get("comments", self.comments)
+        imported = data.get("import_metadata", {})
+        self.import_metadata = copy.deepcopy(imported) if isinstance(imported, dict) else {}
         self.model_version = data.get("model_version", self.model_version)
         self.user_name = data.get("user_name", self.user_name)
         self.Sbase = data.get("Sbase", self.Sbase)
@@ -803,7 +810,8 @@ class MultiCircuit(Assets):
         cpy = MultiCircuit(name=self.name, Sbase=self.Sbase, fbase=self.fBase, idtag=self.idtag)
 
         # TODO: make this list automatic
-        ppts = ['branch_groups',
+        ppts = ['import_metadata',
+                'branch_groups',
                 'lines',
                 'dc_lines',
                 'transformers2w',

@@ -1,0 +1,692 @@
+0
+!
+!  General options
+!
+ ORGRMVISL    = F              /   Remove small islands after bus translation #ALTERADO
+ ORGCHGNAMES  = F              /   Change bus names during bus number translation #ALTERADO                                                      
+ ORGADDUDT    = T              /   Add any results to UDT                                                                              
+ ORGUDTCOL    = T              /   Display UDT items as columns
+ ORGCAPBCURV  = F              /   Use Mvar capability curve instead of fixed limits                                                   
+ ORGPWFMONIT  = F              /   Import monitoring parameters from PWF                                                               
+ ORGDFAVRDYR  = F              /   Adds default AVR when reading DYR files                                                             
+ ORGNOTRFPHS  = F              /   Ignores transformer phase shift when reading RAW files                                              
+ ORGANAZNSEQ  = F              /   Import zero/negative sequences from ANA                                                             
+ ORGPWFVSPEC  = F              /   Writes controlled voltage instead of bus voltage on PWF files                                       
+ ORGOPGENMRG  = F              /   Open generator MW and Mvar limits if MW dispatch is not null
+ ORGADJGENMVA = F              /   Adjust Generator MVA to Pmax and Qmax when reading NTW                                              
+ ORGSHTSTON   = F              /   Set shunt block status to true when reading format NTW                                              
+ ORGDCINVGMIN = F              /   Use DC Inverter minimum gamma when reading format NTW                                               
+ ORGSHTOVRBUS = F              /   Allocate initial shunt exceeding shunt limits at bus                                                
+ ORGEQVNOPF   = F              /   Allows run equivalent network reduction without power flow convergency                              
+ ORGNTWBNT1   = F              /   Processes Bnt1.dat for NTW files (PSR software import only)                                         
+ ORGLMTVSPEC  = F              /   Specified controlled voltage bound by monitored limits                                              
+ ORGIGFICBTHL = F              /   Ignore thermal limit for fictitious bus connections
+ ORGEQV4N5WND = F              /   Reduce 4 or 5 winding trafo into 3 winding trafo
+ ORGCONVLOG   = F              /   RT->Plan: Save conversion log reports
+ ORGCONVMINER = F              /   RT->Plan: Aggregate units with min inertia
+ ORGCONVALLGU = F              /   RT->Plan: Aggregate off gen units
+ ORGCONVEQVST = F              /   RT->Plan: Equivalent step up trafo
+ ORGCONVEQSTX = F              /   RT->Plan: Adjust stepup trafo impedance to keep Mvar
+ ORG0GUBUSOFF = F              /   RT->Plan: Disconnect gen bus with 0 unit ON
+ ORGEQVRNWBRA = T              /   RT->Plan: Eqv. RNW connections into a single branch #ALTERADO
+ ORGUDTCOLVAR = T              /   Show UDT variables in columns
+!
+!  Power flow options
+!
+ PFVOLTRST    = F              /   Reset controlled voltages to specified values                                                       
+ PFFLTSTRT    = F              /   Use good start                                                                                      
+ PFBLKSHT     = T              /   Block discrete shunt control                                                                        
+ PFBLKTAP     = T              /   Block tap control                                                                                   
+ PFDSCRTAP    = F              /   Enable discrete tap                                                                                 
+ PFBLKSHFT    = T              /   Block phase shifter control                                                                         
+ PFAREACNTRL  = F              /   Enable area interchange control                                                                     
+ PFCHSSWING   = T              /   Enable auto-selection of swing Bus due to islanding                                                 
+ PFDSTSLACK   = F              /   Enable distributed slack                                                                            
+ PFCURRATING  = T              /   Current thermal limit instead of MVA                                                                
+ PFMIDRANGE   = F              /   Discrete shunts and LTCs voltage control at middle of range                                         
+ PFSTBDIAG    = T              /   Stabilizes Jacobian diagonal                                                                        
+ PFIMPCORR    = F              /   Transformer impedance correction #ALTERADO                                                                    
+ PFCHKCTRVLT  = F              /   Enforce local voltage limits if necessary (Remote V control)                                        
+ PFEMRVLTLVL  = F              /   Use emergency voltage limits for enforcing local control                                            
+ PFBLOCKQG    = F              /   Block Qg for selected buses (convert PV into PQ)
+ PFDIAGPVT    = T              /   Use only diagonal pivoting in Newton Solution                                                       
+ PFLOGMSG     = F              /   Display control limit messages                                                                      
+ PFREDSWNG    = F              /   Swing generator minimum inertia #ALTERADO                                                                     
+ PFPRLTRFTAP  = F              /   Equalize parallel OLTC transformers' Tap                                                            
+ PFEQVCNTRL   = F              /   Equalize voltage settings of all devices controlling the same bus
+ PFUSEFIXSHT  = F              /   Use fixed shunts as discrete shunts in the voltage control
+!
+! Static contingency options
+!
+ CTGVOLTRST   = F              /   Reset controlled voltages to specified values                                                       
+ CTGFLTSTRT   = F              /   Use good start                                                                                      
+ CTGBLKSHT    = T              /   Block discrete shunt control                                                                        
+ CTGBLKTAP    = T              /   Block tap control                                                                                   
+ CTGDSCRTAP   = F              /   Enable discrete tap                                                                                 
+ CTGBLKSHFT   = T              /   Block phase shifter control                                                                         
+ CTGAREACNTRL = F              /   Enable area interchange control                                                                     
+ CTGCHSSWING  = T              /   Enable swing bus auto-selection                                                                     
+ CTGDSTSLACK  = F              /   Enable distributed slack #ALTERADO
+ CTGCURRATING = T              /   Current thermal limit instead of MVA                                                                
+ CTGMIDRANGE  = F              /   Discrete shunt and LTC voltage control at middle of range                                           
+ CTGSTBDIAG   = T              /   Stabilizes Jacobian diagonal                                                                        
+ CTGIMPCORR   = F              /   Transformer impedance correction #ALTERADO
+ CTGCHKCTRVLT = F              /   Enforce local voltage limits if necessary (Remote V control)                                        
+ CTGEMRVLTLVL = F              /   Use emergency voltage limits for enforcing local control                                            
+ CTGBLOCKQG   = T              /   Block Qg for selected buses (convert PV into PQ) #ALTERADO 																																	   
+ CTGRESTOREBC = T              /   Restore base case after contingency analysis                                                        
+ CTGREDUCEY   = F              /   Reduce branch impedance gradually, if not converged #ALTERADO                                                 
+ CTGRUNSPS    = F              /   Run special protection schemes                                                                      
+ CTGPRNTSPS   = F              /   Print SPS variables on screen                                                                       
+ CTGUSEFIXSHT = F              /   Use fixed shunts as discrete shunts in the voltage control
+!
+! Continuation power flow options
+!
+ CPFVOLTRST   = F              /   Reset controlled voltages to specified values                                                       
+ CPFFLTSTRT   = F              /   Use good start                                                                                      
+ CPFBLKSHT    = T              /   Block discrete shunt control                                                                        
+ CPFBLKTAP    = T              /   Block tap control                                                                                   
+ CPFDSCRTAP   = F              /   Enable discrete tap                                                                                 
+ CPFBLKSHFT   = T              /   Block phase shifter control                                                                         
+ CPFAREACNTRL = F              /   Enable area interchange control                                                                     
+ CPFCHSSWING  = T              /   Auto-selection of swing Bus for contingency generated islands                                       
+ CPFDSTSLACK  = F              /   Distributed slack                                                                                   
+ CPFCURRATING = T              /   Voltage dependent MVA thermal limit (current)                                                       
+ CPFMIDRANGE  = F              /   Shunt and LTC voltage control at middle of range                                                    
+ CPFSTBDIAG   = T              /   Stabilizes Jacobian diagonal                                                                        
+ CPFIMPCORR   = F              /   Transformer impedance correction with tap and phase shift #ALTERADO
+ CPFCHKCTRVLT = F              /   Remote voltage control constrained by local limits                                                  
+ CPFEMRVLTLVL = F              /   Use emergency voltage limits for enforcing local control                                            
+ CPFBLOCKQG   = F              /   Block Qg for selected buses (convert PV into PQ)                                                    
+ CPFDVSTOP    = F              /   Stop if high or low voltage                                                                         
+ CPFMWDCRSTOP = F              /   Stop if MW load decreases                                                                           
+ CPFXLAMBDA   = T              /   Plotting - lambda reference axis (Y), total load (N)                                                
+ CPFUSEFIXSHT = F              /   Use fixed shunts as discrete shunts in the voltage control
+!
+! Optimal power flow options
+!
+ OPFCENTER    = F              /   Center Initial Variable values                                                                      
+ OPFBLKTAP    = T              /   Block Tap controls                                                                                  
+ OPFDSCTAP    = F              /   Discrete Taps                                                                                       
+ OPFBLKSHIFT  = T              /   Block Phase-Shift controls                                                                          
+ OPFBLKDSHT   = T              /   Block Discrete Shunt controls                                                                       
+ OPFLODSHD    = F              /   Allow load shedding                                                                                 
+ OPFFIXDC     = T              /   Let DC Link power injections fixed in the loop optimization                                         
+ OPFRLXSWNG   = F              /   Relax MW limits of swing buses                                                                      
+ OPFRELAX     = F              /   Allow constraint relaxation                                                                         
+ OPFCOMMIT    = F              /   Commit generation units if necessary                                                                
+ OPFPFRUN     = F              /   Run a conventional power flow after OPF                                                             
+ OPFNCPF      = F              /   Run a conventional power flow if OPF does not converge                                              
+ OPFZRPMIN    = T              /   Allow zero generation? #ALTERADO                                                                              
+ OPFFLWCNSTR  = F              /   Enforce branch flow constraint considering the capacity specified by OPFFLMTLVL                     
+ OPFFLWEXPPNT = F              /   Exponential flow constraint penalty model (or Quadratic)                                            
+ OPFDSHTDEV   = F              /   Minimizes discrete shunt deviations from the initial value, instead of zero                         
+ OPFCSHTDEV   = F              /   Minimizes continuous shunt deviations from the initial value, instead of zero                       
+ OPFITAPDEV   = T              /   Minimizes tap deviations from the initial value, instead of one                                     
+ OPFGVARDEV   = F              /   Minimizes generator Mvar deviations from the initial value, instead of zero                         
+ OPFVARBLNC   = F              /   True to balance Var and Volt penalties using OPFVARFCTR parameter                                   
+ OPFSHTALOC   = F              /   True to allocate shunt compensation for voltage control                                             
+ OPFTOPOCHG   = F              /   Switch off lines to improve voltage control or increase Mvar control margin                         
+ OPFFXSHTCTR  = F              /   Use fixed shunts to control voltage
+ OPFTLSHTCTR  = F              /   Use transmission line shunts to control voltage
+ OPFMINGENU   = F              /   Minimum number of generating units 
+ OPFVLENF     = F              /   Enforce voltage limits for base case setup object function                                          
+ OPFBLKRNEW   = F              /   Block renewable generation
+ OPFINTRCHGEN = F              /   True to use only selected generators for interchange control
+!
+! Time domain simulation options
+!
+ TDSAUTTERM   = F              /   Termination of simulation if instability detected #ALTERADO                                                   
+ TDSFREQDEV   = F              /   Termination of simulation if frequency deviation is large #ALTERADO                                           
+ TDSFLRGISLE  = F              /   Check frequency deviation only for the largest inertia island                                       
+ TDSANGLEDEV  = F              /   Termination of simulation if angle deviation is large #ALTERADO
+ TDSVCOLAPSE  = F              /   Termination of simulation if voltage collapse detected #ALTERADO                                              
+ TDSVOSCILL   = T              /   Termination of simulation if renewable voltage oscillation detected
+ TDSFREQDEP   = F              /   Variation of Synchr. Machine parameters with frequency                                              
+ TDSRMTCTRL   = T              /   Allow remote control                                                                                
+ TDSRMVFAIL   = T              /   Removes generators with initialization error from simulation #ALTERADO
+ TDSAUTPRT    = F              /   Enables automatic protection systems                                                                
+ TDSRUNOFFLNE = F              /   Simulate offline generators (in stand by mode)                                                      
+ TDSWCOIREF   = T              /   Uses speed at the center of inertia as reference for generator damping
+ TDSLTEREP    = F              /   Shows LTE and switching reports
+ TDSLDMCHGREP = F              /   Shows load model change to restore solvability report                                               
+ TDSSHEDREP   = F              /   Shows load shed/increase report                                                                     
+ TDSSHEDREPB  = F              /   Shows individual load shedding report by bus
+ TDSSPSINIREP = F              /   Shows SPS initialization report 
+ TDSNUMREP    = F              /   Shows additional messages during simulation
+ TDSRMVMODEL  = F              /   Removes dynamic model not converging                                                                
+ TDSCURRATING = T              /   Use maximum current instead of maximum MVA #ALTERADO
+ TDSYEQLOAD   = F              /   Linearize load model at every iteration                                                             
+ TDSBLKLDMDL  = F              /   Load models represented by constant impedance                                                       
+ TDSTRLBUS    = F              /   Translate bus numbers in DYN files                                                                  
+ TDSSAVRSLT   = F              /   Save summary of contingencies' diagnostics                                                          
+ TDSBLKCOMMF  = F              /   Block natural commutation failure                                                                   
+ TDSADJSMMVA  = F              /   Adjust synchronous machine model MVA to power flow data                                             
+ TDSINFNORM   = F              /   LTE and convergency based on infinite norm                                                          
+ TDSDFLTUEL   = F              /   Setup default UEL if not specified
+ TDSLMTGOV    = F              /   Limit governors output to 1 pu at machine nominal power
+ TDSSIMPLOT   = F              /   Plot graphics during simulation, instead of at the end of simulation
+ TDSBLKAVR    = F              /   Block all AVR models?                                                                               
+ TDSBLKOEL    = F              /   Block all OEL models?                                                                               
+ TDSBLKSCL    = F              /   Block all SCL models?                                                                               
+ TDSBLKUEL    = F              /   Block All UEL Models?                                                                               
+ TDSBLKPSS    = F              /   Block All PSS Models?                                                                               
+ TDSBLKGOV    = F              /   Block All GOV Models?                                                                               
+ TDSBLKWTG    = F              /   Block All WTG Models?                                                                               
+ TDSBLKPVG    = F              /   Block All PVG Models?                                                                               
+ TDSBLKRNW    = F              /   Block Any Renewable Models?
+ TDSLUVGCHK   = F              /   Check long duration voltage drop #ALTERADO                                                                    
+ TDSLOVCHK    = F              /   Check long duration voltage rise #ALTERADO
+ TDSIUVGCHK   = F              /   Check instantaneous voltage drop #ALTERADO
+ TDSIOVCHK    = F              /   Check instantaneous overvoltage #ALTERADO
+ TDSVDPCHK    = T              /   Check steady-state voltage drop                                                                     
+ TDSVLCHK     = T              /   Check steady-state low voltage                                                                      
+ TDSTMLCHK    = T              /   Check steady-state thermal limits                                                                   
+ TDSSTBCHK    = T              /   Check stability margin?                                                                             
+ TDSDMPCHK    = F              /   Check damping #ALTERADO
+ TDSOSCCHK    = T              /   Check ONS voltage oscilation criterion                                                              
+ TDSUV12CHK   = T              /   Check undervoltage for 1st and 2nd swing                                                            
+ TDSUFRCHK    = T              /   Check underfrequency criterion                                                                      
+ TDSOFRCHK    = T              /   Check overfrequency criterion?                                                                      
+ TDSBFRCHK    = T              /   Check bus low frequency criterion?                                                                  
+ TDSUFLSCK    = F              /   Check only UFLS (ERAC) bus low frequency criterion?                                                 
+ TDSPACCHK    = F              /   Check accelerating power variation #ALTERADO                                                                  
+ TDSPPSCHK    = T              /   Check PPS R excursion
+ TDSEFDCHK    = T              /   Check steady state exciter field voltage                                                            
+ TDSIFDCHK    = T              /   Check maximum field voltage criterion                                                               
+ TDSOELCHK    = F              /   Check overexcitation limit operation #ALTERADO
+ TDSUDTCHK    = F              /   Check UDT violation #ALTERADO
+ TDSANGCHK    = F              /   Check angle differences #ALTERADO
+ TDSDCCFCHK   = F              /   Check occurrence of natural DC commutation failure                                                  
+ TDSRCFCHK    = F              /   Check Rate of Change of Frequency criterion #ALTERADO
+!
+! Security assessment options
+!
+ DSAPREPRSCPT = F              /   Process script before (Y) or after (N) reading files DYN, EVT, CTG, etc                             
+ DSABLKFLOW0  = T              /   Block tap and discrete shunt controls for initial base case power flow                              
+ DSACYCLE     = F              /   Cyclic Mode Active? (automat. updates in time interval)                                             
+ DSACOPYCASE  = F              /   Copies Base Case from Public Directory? (If Y->FTP=N)                                               
+ DSAPOSTADIF  = F              /   True to post angle differences after finishing computation (via DynamicLimitsTx)                    
+ DSACTGALL    = F              /   Limit CPF step and compute ctg at every corrector                                                   
+ DSACHGSLACK  = F              /   Select slack bus before running security assessment                                                 
+ DSARESETLOG  = T              /   Reset log at every DSA run #ALTERADO
+!
+! Security region options
+!
+ SRGCOMTGEN   = F              /   Increases number of generation units according to dispatch                                          
+ SRGNOVARCMT  = F              /   Ignore Qg in dispatching minimum number of generators                                               
+ SRGPGMINLIM  = T              /   Use minimum generation limit #ALTERADO                                                                        
+ SRGSWGLIM    = F              /   N->Checks only negative Pg at swing bus; Y->Checks also if swing bus upper limit #ALTERADO
+ SRGPRIORITY  = F              /   Dispatch based on priority order                                                                    
+ SRGEARLYTERM = F              /   Early termination Y->terminate direction if it is beyond the current limit                          
+ SRGRMVNCRCTG = F              /   Remove non-critical contingency                                                                     
+ SRGSHWNUMBR  = T              /   Show number of directions in the Security Region Screen? #ALTERADO                                            
+ SRGCHGXYLIM  = T              /   Adjust X/Y axis limits in the Security Region Screen?                                               
+ SRGNEGGEN    = T              /   Allow negative gen #ALTERADO
+ SRGLRGLABEL  = T              /   Display large label #ALTERADO                                                                                 
+ SRGDBGSLV    = F              /   Y->enable/disable slave processes msgs in DOS windows                                               
+ SRGVOLTOPT   = F              /   Voltage optimization                                                                                
+ SRGPRECTGOPT = F              /   Pre contingency voltage optmization                                                                 
+ SRGNAMTTIP   = T              /   Use name instead of number in tooltips #ALTERADO
+ SRGDCFXDOFST = F              /   true to adjust dispatch setup with fixed offset for all links is a group
+!
+! Report options
+!
+ RPTCOMMASEP  = F              /   Use comma, instead of point, as decimal separator of report numbers
+ RPTONLYVIOL  = F              /   Reports show only the violations
+ RPTONLYDIFF  = F              /   Reports show only differences relative to base case
+ RPTBUS       = T              /   Save Bus report
+ RPTFLW       = T              /   Save Flow report
+ RPTHVDC      = F              /   Save HVDC report
+ RPTAREA      = F              /   Save Area report
+ RPTGENMVAR   = F              /   Save MVAr generation report
+ RPTLOADING   = F              /   Save Line/Trafo loading report
+ RPTUNDVOLT   = F              /   Save undervoltage report
+ RPTOVRVOLT   = F              /   Save overvoltage report
+ RPTSTCTG     = F              /   Save power flow contingencies report
+ RPTDYNCTG    = F              /   Save dynamic contingencies report
+ RPTUDT       = F              /   Save UDT report?
+ RPTFLT       = F              /   Save fault analysis report?
+!
+!  Automatic TDS protection options
+!
+ PRTTLMHO     = T              /   Enable/disable transmission line Mho protection #ALTERADO
+ PRTTLQUAD    = F              /   Enable/disable transmission line Quadrilateral protection                                           
+ PRTTLDIFF    = F              /   Enable/disable transmission line Differential protection                                            
+ PRTTLOVLT    = F              /   Enable/disable transmission line overvoltage protection                                             
+ PRTTLOCUR    = F              /   Enable/disable transmission line overcurrent protection                                             
+ PRTGOVLT     = T              /   Enable/disable genarator overvoltage protection #ALTERADO
+ PRTGUVLT     = F              /   Enable/disable genarator undervoltage protection                                                    
+ PRTGOCUR     = T              /   Enable/disable genarator overcurrent protection #ALTERADO
+ PRTGOSPD     = T              /   Enable/disable generator overspeed protection #ALTERADO
+ PRTGUSPD     = T              /   Enable/disable generator underspeed protection #ALTERADO
+ PRTGFLDLSS   = T              /   Enable/disable generator field loss protection #ALTERADO
+ PRTGVLTPHZ   = T              /   Enable/disable generator volt/hz protection #ALTERADO
+ PRTGMAXANG   = T              /   Enable/disable generator max angle protection #ALTERADO
+ PRTTROCUR    = T              /   Enable/disable transformer overcurrent protection #ALTERADO
+ PRTCOMFAIL   = F              /   Enable/disable commutation failure protection                                                       
+ PRTSHTOVRV   = T              /   Enable/disable capacitor bank overvoltage protection #ALTERADO
+ PRTSRCMOV    = F              /   Enable/disable series capacitor overvoltage protection                                              
+!
+!  Hybrid PSCAD simulation options
+!
+ HYBPORTTYP   = F              /   Multiport Norton equivalent                                                                         
+ HYBWINTERP   = T              /   Frequency phasor interpolation of TDS source #ALTERADO                                                        
+ HYBFREQDEP   = F              /   Frequency dependent TDS source inductance                                                           
+!
+!  Script options
+!
+ SPTRUN       = F              /   Run script after WFS reading                                                                        
+ SPTCHKATEND  = F              /   Net check at script end                                                                             
+!
+!  Scenario generation options
+!
+ SCNREFLOAD   = F              /   Use reference case load                                                                             
+ SCNPDPLOAD   = F              /   Use CPR load forecast                                                                               
+ SCNZONLOAD   = F              /   Use Zone load forecast                                                                              
+ SCNREBUILD   = T              /   Rebuild scenarios  #ALTERADO                                                                                   
+ SCNREFGEN    = F              /   Use reference case generation                                                                       
+ SCNPREPRCSPT = F              /   Y to process script before OPF, N to process it after OPF                                           
+ SCNPRCSPT    = F              /   Y to process script                                                                                 
+ SCNFILTOOS   = F              /   Filter OOS reports                                                                                  
+ SCNINTOUT    = T              /   Include Interrupted outages in the created scenario                                                 
+ SCNINFOUT    = T              /   Include Informed outages in the created scenario                                                    
+ SCNANAOUT    = T              /   Include Analyzing outages in the created scenario                                                   
+ SCNAPROUT    = T              /   Include Approved outages in the created scenario                                                    
+ SCNEXEOUT    = T              /   Include Executing outages in the created scenario                                                   
+ SCNREVOUT    = T              /   Include Revising outages in the created scenario                                                    
+ SCNUNAOUT    = T              /   Include Unavailable outages in the created scenario                                                 
+ SCNCNCOUT    = T              /   Include Concluded outages in the created scenario                                                   
+ SCNCANOUT    = F              /   Include Canceled outages in the created scenario                                                    
+ SCNSPRMSG    = T              /   Suppress screen messages during scenario creation                                                   
+ SCNDSPSYNC   = T              /   Dispatch priority: synchronous Compensators                                                         
+ SCNEMRGLMT   = F              /   Use emergency limits                                                                                
+ SCNBLKDSASPT = F              /   Block scripts for scenario DSA #ALTERADO                                                                      
+ SCNENBDSHT   = T              /   Enable discrete shunt control in scenario creation                                                  
+ SCNENBTAP    = T              /   Enable tap control in scenario creation                                                             
+ SCNREFRNW    = F              /   Reference case renewable dispatch, instead of programmed                                            
+ SCNLCKRNW    = T              /   Lock renewable dispatch                                                                             
+ SCNALLRNWON  = F              /   Dispatch all renewable units                                                                        
+ SCNCIDNAME   = F              /   Name cases with specified Case ID (CID)                                                             
+ SCNBLKFPF    = F              /   Block processing final power flow after OPF                                                         
+ SCNBLKIPF    = F              /   Block processing initial power flow after OPF                                                       
+!
+!  Outages options
+!
+ OUTSTPBCVIOL = F              /   Stop evaluation if base case violations are found                                                   
+ OUTSTPBCSECR = F              /   Stop evaluation if base case security issues are found                                              
+!
+!  Equivalent options
+!
+ EQVSAVACC    = F              /   Save accuracy results                                                                               
+ EQVZEROGM    = F              /   New branchs with zero conductance #ALTERADO                                                                   
+!
+!  Case Manager options
+!
+ CMIGNLMT     = F              /   Ignore generation limits?                                                                           
+ CMSTPONERR   = F              /   Stop Case Manager due build case processing errors?                                                 
+ CMTMLCRTCHK  = F              /   Thermal criteria must be violated at same time to retain branch                                     
+ CMVLMTCHK    = T              /   Check voltage limits (inf and sup)?                                                                 
+ CMSTCNOVRL   = F              /   Ignore static normal overload?                                                                      
+ CMSTCNEG     = F              /   Ignore static negative variations?                                                                  
+ CMSTCPOS     = F              /   Ignore static positive variations?                                                                  
+ CMSENSRUN    = F              /   Run static generation sensibility for every overload in static analysis?                            
+ CMSENSNOVRL  = F              /   Ignore sensibility on static normal overload?                                                       
+ CMSENSNEG    = F              /   Ignore sensibility on static negative variations?                                                   
+ CMSENSPOS    = F              /   Ignore sensibility on static positive variations?                                                   
+!
+!  Fault Analysis (or short circuit) options
+!
+ SRCSTANDARD  = T              /   Run standard analysis                                                                               
+ SRCIECSTD    = F              /   Short circuit analysis according to IEC standard                                                    
+ SRCINCLDFICT = F              /   Apply fault to fictitious buses (standard mode only)
+ SRCFLATVOLTS = F              /   Run fault analysis with flat pre-fault voltages (Non-IEC only)
+ SRCMUTUAL    = F              /   Consider mutual impedances? #ALTERADO                                                                         
+ SRCBLKPSHIFT = F              /   Run fault analysis with phase shifters blocked
+ SRCPOSSQBSHT = F              /   Run fault analysis considering positive sequence of branch shunts
+ SRCCMPVOLTS  = F              /   Compare system voltages of processed fault contingencies (user defined only)
+ SRCFLTFC     = T              /   Filter full converter (WT and PV) by voltage sensitivity                                            
+ SRCBLKFC     = F              /   Neglect full converter source's fault current contribution                                          
+!
+!  Margin options
+!
+ MRGCHKCTG    = T              /   Assess static contingencies if data is provided
+ MRGADDUDT    = F              /   Add partial margin solutions to UDT
+ MRGRBCASE    = T              /   Restore original base case
+ MRGALLVIO    = F              /   Show all violations in violation report
+ MRGRMVCTG    = F              /   Remove all contingencies that failed at starting base case
+ MRGSAVEFILE  = F              /   Save file(s) for final cases of margin computation
+ MRGSAVEALL   = F              /   Save file for all cases created in the binary search
+ MRGSTEPMIN   = F              /   Keep MWTOL to stop binary search
+ MRGMAXSEGEN  = T              /   Maximize SE generation before starting margin computation
+ MRGLOCSESPS  = F              /   Ignore local SE violations (assuming local SPS)
+ MRGFORLOAD   = F              /   Compute load margin computation
+!
+! NUMERIC PARAMETERS
+!
+! Miscelanea
+!
+ ORGMVABASE   = 100.           /   System MVA Base (MVA)                                                                               
+ ORGBASEFREQ  = 60.            /   Base Frequency (Hz)                                                                                 
+ ORGZMIN      = .1E-05         /   Minimum impedance value (pu)                                                                        
+ ORGZMAX      = 100.           /   Maximum impedance value (pu)                                                                        
+ ORGNULLTAP   = 1.             /   Default tap                                                                                         
+ ORGTAPMININF = 0.7            /   Minimum value for minimum tap                                                                       
+ ORGTAPMINSUP = 1.             /   Maximum value for minimum tap                                                                       
+ ORGTAPMAXINF = 0.9            /   Minimum value for maximum tap #ALTERADO (1.00000)
+ ORGTAPMAXSUP = 1.4            /   Maximum value for maximum tap                                                                       
+ ORGDEFMIN    = -60.           /   Phase shifter minimum angle (deg)                                                                   
+ ORGDEFMAX    = 60.            /   Phase shifter maximum angle (deg)                                                                   
+ ORGRCCMIN    = 0.000010       /   Minimum DC line resistance (pu) #ALTERADO (0.00010)
+ ORGRCCMAX    = 0.             /   Maximum DC line reactance  (pu)                                                                     
+ ORGXCCMAX    = 0.000010       /   Maximum DC ground resistance (pu) #ALTERADO (0.00010)
+ ORGALFAMIN   = 0.             /   Minimum firing (alpha) angle (deg)                                                                  
+ ORGALFAMAX   = 60.            /   Maximum firing (alpha) angle (deg) #ALTERADO CF MELO (30)                                                                  
+ ORGGAMAMIN   = 0.             /   Minimum extinction (gamma) angle (deg)                                                              
+ ORGGAMAMAX   = 30.            /   Maximum extinction (gamma) angle (deg)                                                              
+ ORGVOLTINF   = 0.9            /   Undervoltage alarm threshold (pu)                                                                   
+ ORGVOLTSUP   = 1.1            /   Overvoltage alarm threshold (pu)                                                                    
+ ORGUNDERVOLT = 0.5            /   Minimum voltage (data check) (pu)                                                                   
+ ORGOVERVOLT  = 1.3            /   Maximum voltage  (data check) (pu)                                                                  
+ ORGDELTAMAX  = 80.            /   Maximum generator capability loading angle (deg)                                                    
+ ORGSRVFCTR   = 1.             /   Default generator current service factor (pu)                                                       
+ ORGGENSHRMOD = 0              /   Gen Mvar sharing mode (0=Fp,1=Even,2=#Un*Fp,3=Qmax)                                                 
+ ORGUNITCOMMT = 0              /   Gen units commitment mode (0=ANAT0,1=GID Seq,2=Largest first,3=GID Seq, Synch. PWF/BNT1)            
+ ORGTLSHTVRNG = 0.1            /   Transmission line shunt control minimum voltage range (pu)                                          
+!
+! PF numeric parameters
+!
+ PFMVATOL     = 0.001          /   Convergency power tolerance (pu)                                                                    
+ PFVTHRS      = 0.8            /   Voltage threshold to convert loads from P, I to Z model (pu)                                        
+ PFTAPTHRS    = 1000.          /   Power mismatch threshold to activate tap control (pu)                                               
+ PFCTRLBOUNC  = 3              /   Number of times allowed for control limit bouncings                                                 
+ PFMAXITER    = 90             /   Maximum number of iterations                                                                        
+ PFGENVARIT   = 0              /   Number of iterations with Gen MVAr controls off                                                     
+ PFSHTVARIT   = 0              /   Number of iterations with Shunt MVAr controls off                                                   
+ PFTAPVARIT   = 0              /   Number of iterations with Tap controls off                                                          
+ PFMWLDMDL    = 0              /   MW Load Model: 0:original, 1:Z, 2:I, 3:P                                                            
+ PFMVARLDMDL  = 0              /   MVAR Load Model: 0:original, 1:Z, 2:I, 3:P                                                          
+ PFOVRLDLV    = 3              /   Monitored Overload Level: 1:Normal, 2:Alert, 3:Emergency #ALTERADO                                            
+!
+! Static contingency numeric parameters
+!
+ CTGVTHRS     = 0.8            /   Voltage threshold to convert loads from P, I to Z model (pu)                                        
+ CTGTAPTHRS   = 1000.          /   Power mismatch threshold to activate tap control (pu)                                               
+ CTGCTRLBOUNC = 3              /   Number of times allowed for control limit bouncings                                                 
+ CTGMAXITER   = 30             /   Maximum number of iterations  #ALTERADO (20)
+ CTGGENVARIT  = 0              /   Number of iterations with Gen MVAr controls off                                                     
+ CTGSHTVARIT  = 0              /   Number of iterations with Shunt MVAr controls off                                                   
+ CTGTAPVARIT  = 0              /   Number of iterations with Tap controls off                                                          
+ CTGMWLDMDL   = 0              /   MW Load Model: 0:original, 1:Z, 2:I, 3:P                                                            
+ CTGMVARLDMDL = 0              /   MVAR Load Model: 0:original, 1:Z, 2:I, 3:P                                                          
+ CTGOVRLDLV   = 3              /   Monitored overload Level: 1:Normal, 2:Alert, 3:Emergency #ALTERADO                                            
+ CTGYREDFCT   = 30.            /   Branch admittance reduction factor                                                                  
+!
+! Continuation power flow numeric parameters
+!
+ CPFVTHRS     = 0.01           /   Voltage level to convert loads from P,r I to Z model (pu)                                           
+ CPFCTRLBOUNC = 1              /   Number of times allowed for control limit bouncings #ALTERADO (2)                                                 
+ CPFMAXITER   = 12             /   Maximum number of iterations                                                                        
+ CPFGENVARIT  = 0              /   Number of iterations with Gen MVAr controls off                                                     
+ CPFSHTVARIT  = 0              /   Number of iterations with Shunt MVAr controls off                                                   
+ CPFTAPVARIT  = 0              /   Number of iterations with tap controls off                                                          
+ CPFMWLDMDL   = 0              /   MW Load Model: 0:original, 1:Z, 2:I, 3:P                                                            
+ CPFMVARLDMDL = 3              /   MVAR Load Model: 0:original, 1:Z, 2:I, 3:P                                                          
+ CPFOVRLDLV   = 3              /   Monitored overload Level: 1:Normal, 2:Alert, 3:Emergency #ALTERADO
+ CPFMODE      = 1              /   Calculation model (1:load level; 2:nose tip; 3:nose)                                                
+ CPFNCRITBUS  = 6              /   Number of critical buses                                                                            
+!
+! Optimal power flow numeric parameters
+!
+ OPFMAXITER   = 100            /   Maximum number of iterations                                                                        
+ OPFMUINI     = 5.             /   'Mu' initial value                                                                                  
+ OPFMUMIN     = .1E-11         /   Minimum 'Mu'value                                                                                   
+ OPFMUMAX     = .1E-11         /   Maximum 'Mu'value                                                                                   
+ OPFLOGBARTOL = 0.01           /   Tolerance to Logarithm Barrier                                                                      
+ OPFRO        = 0.9995         /   Primal and Dual Correction Factor (sigmaP and SigmaD)                                               
+ OPFVCONSTR   = 1              /   Voltage constraints: 0 = Monitored limits; 1 = Setting Point + Margin; 2 = Uniform fixed            
+ OPFVSETPNT   = 0              /   Voltage setting point: 0 = Specified value; 1 = Flat start; 2 = Specified for PV and Flat for PQ    
+ OPFSTRTPNT   = 1              /   Voltage Starting mode: 0 = Hot start; 1 = Flat start; 2 = Organon self start                        
+ OPFFLMTLVL   = 3              /   Branch flow limit: 1 = normal; 2 = overload; 3 = emergency. Only considered if OPFFLWCNSTR  = T #ALTERADO
+ OPFOBJFUNC   = 3              /   Default object function type (2 = voltage setup; 3 = case setup)                                    
+ OPFCDV       = 0.1            /   PQ bus voltage setting point margin. Voltage constraint in mode 'Setting Point'                     
+ OPFUDV       = 0.2            /   PV bus voltage setting point margin. Voltage constraint = 'Setting Point +- Mvar'                   
+ OPFADV       = 0.             /   Voltage setting point margin for all buses. Voltage constraint in mode 'Setting'                    
+ OPFVPNLTY    = 100.           /   Voltage deviation penalty                                                                           
+ OPFTAPPNLTY  = 1000.          /   Tap change penalty                                                                                  
+ OPFCMWMIN    = 1.             /   Minimum selfdefined control MW penalty                                                              
+ OPFCMWMAX    = 10.            /   Maximum selfdefined control MW penalty                                                              
+ OPFCMVRMIN   = 1.             /   Minimum selfdefined control Mvar penalty, range 1.D-4 to 1.D3                                       
+ OPFCLOAD     = 1000.          /   Load shedding penalty #ALTERADO (100.)                                                                               
+ OPFCSHTMAX   = 10.            /   Maximum selfdefined shunt control penalty                                                           
+ OPFMWRNG     = 0.1            /   Minimum Generator MW range (p.u.) to enable MW control                                              
+ OPFMVRRNG    = 0.1            /   Minimum Generator Mvar range (p.u.) to enable voltage control                                       
+ OPFBMRG      = 0.1            /   Minimum Shunt Susceptance range (p.u.) to enable voltage control                                    
+ OPFCMTMRG    = 0.8            /   Percentage of PMax for turn ON/OFF generation units                                                 
+ OPFVLMTMAX   = 1.06           /   Fixed maximum voltage limit (p.u.) #ALTERADO (1.1)
+ OPFVLMTMIN   = 0.95           /   Fixed minimum voltage limit (p.u.) #ALTERADO (0.9)
+ OPFVARFCTR   = 1.             /   Volt/var penalty balance factor, range 0.1 to 10.                                                   
+ OPFFLWGTCST  = 10.            /   Flowgate control penalty factor
+!
+! Time domain simulation numeric parameters
+!
+ TDSMTHD      = 0              /   Numerical integration method (0=mix, 1=bdf, 2=abm)                                                  
+ TDSHMIN      = 0.0001         /   Minimum Time Step (s)                                                                               
+ TDSHMAX      = 20.            /   Maximum Time Step (s) #ALTERADO (40.)                                                                               
+ TDSRELTOL    = 0.00001         /   Relative Tolerance #ALTERADO (0.001)
+ TDSABSTOL    = 0.00001         /   Absolute Tolerance #ALTERADO (0.001)
+ TDSBFREQTC   = 0.02           /   Bus frequency filter time constant                                                                  
+ TDSMINPLTTMI = 0.001          /   Minimum plotting time interval #ALTERADO (0.004)                                                                      
+ TDSSNGFAULT  = 0.65           /   One line fault voltage at faulty bus #ALTERADO (0.6)                                                                
+ TDSBIFGFAULT = 0.65           /   Two-Phase-Ground fault voltage at fault bus #ALTERADO (0.4)
+ TDSVLOADLVL  = 0.7            /   Voltage level to convert loads to 100% Z model #ALTERADO (0.6)                                                      
+ TDSCFIDLIM   = 0.             /   Maximum DC current value (pu) of nominal value to allow recovery from commutation failure           
+ TDSFMIN      = 0.9            /   Minimum frequency for TDS interruption (pu)                                                         
+ TDSFMAX      = 1.1            /   Maximum frequency for TDS interruption (pu)                                                         
+ TDSMXCHKANG  = 360.           /   Angle difference criterion threshold                                                                
+ TDSMNDOTPRDI = -3.            /   Dot product instability detection threshold                                                         
+ TDSOVRLDLV   = 3              /   Overload Level: 1-Normal, 2-Alert, 3-Emergency #ALTERADO                                                      
+ TDSPSSVTMOFF = 1.             /   Time delay to block PSS if voltage is outside allowed range #ALTERADO (0.0)
+ TDSPSSPTMOFF = 1.             /   Time delay to block PSS if MW or current is below threshold #ALTERADO (0.0)                                         
+ TDSMAXTRJ    = 2000           /   Maximum number of curves for TDS plotting                                                           
+ TDSMAXPLT    = 50             /   Maximum number of graphs for TDS plotting                                                           
+ TDSPLTMODE   = 1              /   Plotting Mode (0 = Specified if present or default; 1 = specified; 2 = default                      
+ TDSPLTTYPE   = 1              /   Default plotting Type (1 = angle; 2 = voltage; 3 = torque; 4 = frequency                            
+ TDSPLTVLP    = 2000           /   Number of vertical lines of protection trip on graphs
+ TDSDFLMODMVA = 25.            /   MVA threshold to include default dynamic model                                                      
+ TDSTIME      = 15.            /   Simulation time (s)                                                                                 
+ TDSVSTBHIGH  = 1.3            /   Voltage instability detection high threshold (pu)
+ TDSVSTBLOW1  = 0.3            /   Voltage instability detection low threshold 1 (pu)
+ TDSVSTBLOW2  = 0.4            /   Voltage instability detection low threshold 2 (pu)
+ TDSVSTBLOW3  = 0.5            /   Voltage instability detection low threshold 3 (pu)
+ TDSVSTBLOW4  = 0.7            /   Voltage instability detection low threshold 4 (pu)
+ TDSVSTBTMR2  = 0.008          /   Voltage instability detection timer 2 (s)
+ TDSVSTBTMR3  = 0.016          /   Voltage instability detection timer 3 (s)
+ TDSVSTBTMR4  = 0.24           /   Voltage instability detection timer 4 (s)
+ TDSRNWOSCMG  = 0.1            /   Magnitude of renewable voltage oscillation detection (pu)
+ TDSRNWOSCTM  = 0.01           /   Half cycle time of renewable voltage oscillation detection (s)
+ TDSCRCPRIORT = 1              /   Branch priority (1=input; 2=lower X; 3=higher X; 4=higher MVA; 5=lower MVA)
+ TDSMXDSCRITR = 4              /   Maximum discrete loop iterations
+ TDSNUMPRLCRC = 1              /   Number of simultaneous branchs to disconnect in event 68
+ TDSLUVVAL    = 0.8            /   Voltage Drop threshold                                                                              
+ TDSLUVTIME   = 0.08           /   Duration of voltage Drop                                                                            
+ TDSLUVKV     = 230.           /   For buses above (kV) #ALTERADO
+ TDSLOVVAL    = 1.2            /   Voltage Rise threshold                                                                              
+ TDSLOVTIME   = 0.2            /   Duration of voltage Rise                                                                            
+ TDSLOVKV     = 230.           /   For buses above (kV) #ALTERADO                                                                                
+ TDSIUVGVAL   = 0.6            /   Voltage drop threshold                                                                              
+ TDSIUVGKV    = 230.           /   For buses above (kV) #ALTERADO
+ TDSIOVVAL    = 1.2            /   Overvoltage threshold #ALTERADO (1.3)                                                                               
+ TDSIOVKV     = 230.           /   For buses above (kV) #ALTERADO
+ TDSVDPVAL    = 0.1            /   Voltage drop threshold                                                                              
+ TDSVDPKV     = 230.           /   For buses above (kV) #ALTERADO                                                                                
+ TDSDMPVAL    = 0.15           /   Low damping threshold                                                                               
+ TDSTMLREF    = 100.           /   Thermal limit criterion violation % threshold                                                       
+ TDSOSCVAL    = 0.02           /   ONS Voltage oscillation threshold                                                                   
+ TDSOSCTIME   = 10.            /   Initial time for ONS voltage oscillation criterion                                                  
+ TDSOSCKV     = 230.           /   For buses above (kV) #ALTERADO
+ TDSUV12VAL1  = 0.7            /   1st swing undervoltage threshold #ALTERADO                                                                    
+ TDSUV12VAL2  = 0.8            /   2st swing undervoltage threshold                                                                    
+ TDSUV12KV    = 230.           /   For buses above (kV) #ALTERADO
+ TDSUFRVAL    = 0.95           /   Underfrequency threshold                                                                            
+ TDSOFRVAL    = 1.05           /   Frequency limit for overfrequency (Hz)                                                              
+ TDSBFRVAL    = 0.95           /   Underfrequency criterion violation threshold (pu)                                                   
+ TDSBFRTIME   = 0.02           /   Bus frequency criterion - pickup time (s)                                                           
+ TDSPACVAL    = 0.5            /   Accelerating power variation threshold                                                              
+ TDSPPSVAL    = 100            /   PPS R excursion threshold (% of RMin or RMax values)
+ TDSEFDVAL    = 2.1            /   Exciter field voltage threshold                                                                     
+ TDSEFDBUS    = 1107           /   Exciter bus number #ALTERADO
+ TDSIFDVAL    = 2.833          /   Maximum field current criterion - threshold (pu) #ALTERADO (1.0)
+ TDSIFDBUS    = 0              /   Maximum field current criterion - monitored generator bus number                                    
+ TDSOELTIME   = 0.2            /   OEL maximum time threshold                                                                          
+ TDSOELBUS    = 1107           /   OEL bus #ALTERADO
+ TDSANGBUS1   = 501            /   Angle threshold bus 1 #ALTERADO
+ TDSANGBUS2   = 5022           /   Angle threshold bus 2 #ALTERADO
+ TDSANGBUS3   = 6422           /   Angle threshold bus 3 #ALTERADO
+ TDSLDSHDMW   = 10.            /   Load shed MW criteria threshold #ALTERADO (20.)
+ TDSROCOF     = 1.             /   Rate of Change of Frequency threshold (Hz/s)
+ TDSMXINICHKT = 900.           /   Maximum time to start checking TDS criteria (s) 
+!
+! Security assessment numeric parameters
+!
+ DSATYPE      = 4              /   Stc/Dyn(1/3:BC;2/4:SR;6/7:1DC2G;8/9:1DCTrfL;10/11:2DC)5:TrfL;12:MRG #ALTERADO (1)
+ DSANPROC     = 4              /   Default number of parallel processes #ALTERADO (5)                                                                
+ DSACYCLTIME  = 600.           /   Period for Running DSA in Cycle Mode (s) #ALTERADO (10000.)                                                            
+ DSAINJZCONST = 50.            /   Bus translation parameter to convert bus injection into constant Z (%)                              
+ DSANEWSLACK  = 0              /   DSA: New swing bus                                                                                  
+!
+! Security region numeric parameters
+!
+ SRGMAXRAY    = 2000.          /   Search boundary maximum ray (MW) #ALTERADO (0.0)
+ SRGCTGDST    = 0.             /   Minimum distance for two consecutive contingency checks (MW)                                        
+ SRGBNDRTOL   = 50.            /   Tolerance for binary search of the region's limit (MW)                                              
+ SRGNUMDIR    = 8              /   Number of directions (4, 8, ..., 80) #ALTERADO (20)                                                                
+ SRGCOMTPRCT  = 80.            /   Percentage of PMax for turn ON/OFF generation units #ALTERADO (90)                                                 
+ SRGSTEPMOD   = 1.             /   Continuation power flow step reduction factor [0.01,1]                                              
+ SRGRMVMINSZ  = 10.            /   Remove non-crit. ctg minimum list size #ALTERADO (0.5)                                                              
+ SRGRMVMINFRQ = 10.            /   Remove non-crit. ctg frequency threshold #ALTERADO (0.8)                                                            
+ SRGRMVNASSM  = 1              /   Number of evaluations to remove non-crit. ctgs #ALTERADO (3)
+ SRGRMVSECIDX = 1              /   Security index assessment 1:StbIdx/2/3                                                              
+ SRGMXMWCHG   = 100.00000      /   Maximum MW change per dispatch in priority list (>10) #ALTERADO (500)                                               
+ SRGVVIOTYPE  = 2              /   Voltage violation type (0 = Undervoltage; 1 = Overvoltage; 2 = Both) #ALTERADO                           
+ SRGCRTROPT   = 0              /   Crit.(0:QQ,1:DL,2:VD,3:1S,4:2S,5:UF,6:OF,7:BF,8:MA,9:PA,10:RM,11:EF,12:IF,13:OE)                    
+ SRGDMPCRTR   = 1              /   Damping Criteria (0-Prony,1-Voltage Oscillation) #ALTERADO
+ SRGBNDOPT    = 0              /   Violation coordinate (0:interp,1:pto without viol,2:pto with viol)                                  
+ SRGSCRNOPT   = 1              /   Sec. Reg. Screen (0-ALL,1-G1xG2,2-G1xG3,3-G2xG3,4-UDT) #ALTERADO
+ SRGQUADOPT   = 0              /   Quad G1xG2 (0-ALL, 1-N, 2-NE, 3-E, 4-SE, 5-S, 6-SO, 7-O, 8-NO)                                      
+ SRGLSLEVEL   = 3              /   Load shedding criterion level (0:None;1:Event;2:Protection;3:SPS;4:All) #ALTERADO
+ SRGUDTXINDEX = 1              /   Index of UDT for 4th nomogram X axis                                                                
+ SRGUDTYINDEX = 2              /   Index of UDT for 4th nomogram Y axis                                                                
+!
+!  Automatic TDS protection numeric parameters
+!
+ PRTBRKTM     = .05            /   Breaker timer #ALTERADO (0.008)
+ PRTTOVCURTM  = 1000.          /   Transformer overcurrent timer                                                                       
+ PRTTOVCUR    = 1.25           /   Transformer overcurrent level                                                                       
+ PRTLOVCURTM  = 12.            /   Transmission line overcurrent timer #ALTERADO (10.0)
+ PRTLOVCUR    = 1.3            /   Transmission line overcurrent level                                                                 
+ PRTDSTMODE   = 1              /   Distance relay mode (0=original, 1=JM) #ALTERADO                                                              
+ PRTBRKMODE   = 0              /   Breaker mode (0 = open both; 1 = open one side)                                                     
+ PRTDST1TM    = 0.035          /   Distance relay timer zone 1 #ALTERADO (0.002)
+ PRTDST2TM    = 0.13           /   Distance relay timer zone 2 #ALTERADO (0.12)                                                                         
+ PRTDSTCURMN  = 0.05           /   Distance relay current threshold                                                                    
+ PRTDSTZ1RCH  = 0.8            /   Zone 1 reach                                                                                        
+ PRTDSTZ2RCH  = 0.12           /   Zone 2 reach                                                                                        
+ PRTDSTVLTM   = 0.015          /   Distance relay voltage memory timer                                                                 
+ PRTTLDIFTMR  = 0.4            /   Transmission line differential protection timer (s)                                                 
+ PRTTLDIFLVL  = 0.05           /   Transmission line differential protection level p.u.                                                
+ PRTTLDIFS1   = 0.05           /   Transmission line differential protection slope 1                                                   
+ PRTTLDIFS2   = 0.05           /   Transmission line differential protection slope 2                                                   
+ PRTTLDIFIR1  = 0.2            /   Transmission line differential protection restriction current 1                                     
+ PRTTLDIFIR2  = 0.6            /   Transmission line differential protection restriction current 2                                     
+ PRTTLQADLV1  = 0.8            /   Transmission line quadrilateral protection zone 1 reach                                             
+ PRTTLQADBR1  = 0.5            /   Transmission line quadrilateral protection right blinder 1                                          
+ PRTTLQADBL1  = 0.5            /   Transmission line quadrilateral protection left blinder 1                                           
+ PRTTLQADLV2  = 1.2            /   Transmission line quadrilateral protection zone 2 reach                                             
+ PRTTLQADBR2  = 0.7            /   Transmission line quadrilateral protection right blinder 2                                          
+ PRTTLQADBL2  = 0.7            /   Transmission line quadrilateral protection left blinder 2                                           
+ PRTLOVVLTTM  = 1.             /   Transmission line overvoltage timer                                                                 
+ PRTLOVVLT    = 1.3            /   Transmission line overvoltage level                                                                 
+ PRTGOVVLTTM  = 0.3            /   Generator overvoltage timer                                                                         
+ PRTGUVVLTTM  = 2.             /   Generator undervoltage timer                                                                        
+ PRTGOVVLT    = 1.25           /   Generator overvoltage level                                                                         
+ PRTGUVVLT    = 0.85           /   Generator undervoltage level                                                                        
+ PRTGOVCURTM  = 1.             /   Generator overcurrent timer                                                                         
+ PRTGOVCUR    = 1.5            /   Generator overcurrent level                                                                         
+ PRTGVPHZTM   = 10.            /   Generator Volt/Hz level                                                                             
+ PRTGVPHZ     = 1.2            /   Generator Volt/Hz timer                                                                             
+ PRTGOVSPDTM  = 1.             /   Generator overspeed timer                                                                           
+ PRTGUDSPDTM  = 1.             /   Generator underspeed timer                                                                          
+ PRTGOVSPDTR  = 1.06           /   Overspeed level for turbogenerators                                                                 
+ PRTGOVSPDHD  = 1.1            /   Overspeed level for hydrogenerators                                                                 
+ PRTGUDSPDTR  = 0.97           /   Underspeed level for turbogenerators                                                                
+ PRTGUDSPDHD  = 0.2            /   Underspeed level for hydrogenerators                                                                
+ PRTDCLCFTIME = 0.9            /   Successive commutation failure time span #ALTERADO (0.5)                                                            
+ PRTDCLCFCONT = 10             /   Maximum number of successive commutation failures #ALTERADO (3)                                                   
+ PRTSHTOVRVR  = 1.2            /   Capacitor bank maximum sustained voltage                                                            
+ PRTSHTOVRVI  = 3.             /   Maximum instantaneous voltage                                                                       
+ PRTSRCVOLT   = 3.             /   Maximum instantaneous series current #ALTERADO (1.1)                                                                
+!
+!  Hybrid PSCAD simulation numeric parameters
+!
+ HYBRMPTIME   = 0.0022         /   Variable ramp time for programs' synchronizations (s)                                               
+ HYBSYNCTOL   = 0.2            /   Tolerance for current variation for synchronization                                                 
+ HYBSYNCTIME  = 0.00001        /   Minimum dead time for synchronization (s) #ALTERADO
+ HYBUPDTTIME  = 0.016          /   Underspeed level for hydrogenerators                                                                
+ HYBEQVFRQ    = 1              /   Organon source frequency phasor (1-FCI,2-FCI+FBI,3-FBI,4-60HZ)                                      
+ HYBEMTPHS    = 0              /   Underspeed level for hydrogenerators                                                                
+!
+!  Scenario generation numeric parameters
+!
+ SCNSAMTHD    = 1              /   Scenario security assessment Method (1:OPSt, 2:SRStc, 3:OPDyn, 4:SRDyn)                             
+ SCNFIRST     = 1              /   Index of the first scenario to be created                                                           
+ SCNLAST      = 48             /   Index of the last scenario to be created #ALTERADO (49)                                                            
+ SCNINTER     = 1              /   Scenario offset Interval (1=30min;2=1h;3=2h;4=4h;5=8h)                                              
+ SCNVREF      = 0              /   Scenario reference voltage (0=Original;1=Flat;2=mixed)                                              
+ SCNCYCLTM    = 10.            /   Scenario security region cycle time (s) #ALTERADO (5.0)                                                             
+!
+!  Equivalent numeric parameters
+!
+ EQVLOGLVL    = 0              /   Equiv. Log level (0:None;1:Dyn.Gen;2:Stc.Bus;3:Stc.Branch)                                          
+ EQVNEGLOAD   = 0              /   Equiv. Neg. Load Conv. (0:None;1:Cluster;2:Clust+Interf.;3:Clust+Intf.+Extern_Z)                    
+ OUTINTRV     = 1              /   scenario interval (1: 30m, 2: 1h, 3: 2h, 4: 4h, 5: 8h)                                              
+ OUTMETHOD    = 0              /   Contingency evaluation method (0: None; 1: Static; 2: dynamic)                                      
+ OUTALGRTH    = 0              /   Analysis type (0 = individual, 1 = additive, 2 = combinatorial)                                     
+!
+!  Case Manager numeric parameters
+!
+ CMTMLREF     = 100            /   Thermal limit reference (%)                                                                         
+ CMFLOWVAR    = 5              /   Flow var (%)                                                                                        
+ CMVOLTVAR    = 2.             /   Voltage reference (%)                                                                               
+!
+!  Fault Analysis (or short circuit) numeric parameters
+!
+ SRCTLZSEQ    = 3.             /   Default transmission line zero sequence factor                                                      
+ SRCTLMUTR    = 0.8            /   Default zero sequence mutual resistance factor                                                      
+ SRCTLMUTX    = 0.6            /   Default zero sequence mutual reactance factor                                                       
+ SRCGEZSEQR   = 1.             /   Default Gen zero sequence resistance factor                                                         
+ SRCGEZSEQX   = 0.7            /   Default Gen zero sequence resistance factor                                                         
+ SRCIDCTIME   = 40.            /   Time to which the fault DC component is computed (ms)                                               
+ SRCFCVSENS   = 0.01           /   Voltage sensitivity for full converter filtering by voltage sensitivity (pu)
+ SRCINVCURR   = 1.15           /   Default inverter current (pu) 
+!
+!  Topologic Control numeric parameters
+!
+ TOPPTHRS     = 20.            /   Active power flow threshold for T.Line switching (%)                                                
+ TOPQTHRS     = 10.            /   Reactive power flow threshold for T.Line switching (%)                                              
+!
+!  Margin numeric parameters
+!
+ MRGOUTPUT    = 1              /   Output folder (1:PF, 2: Script, 3:DSA/WFS)
+ MRGFFORM     = 0              /   Output file format (0:Input data;1:PWF, 2:NTW)
+ MRGMW4REP    = 2              /   MW interval for report (1:Tol,2:Step,3:MWMax
+ MRGMWMAX     = 10000.         /   Maximum margin (MW)
+ MRGMWSTEP    = 10.            /   Margin step (MW)
+ MRGMWTOL     = 5.             /   Margin tolerance (MW)
+ MRGVVIOTOL   = 0.             /   V violation tolerance (pu)
+!
+!  Control Actions options
+!
+ ACTVOLTKV    = F              /   Report action voltage results in kV
+!                                                                      
+END

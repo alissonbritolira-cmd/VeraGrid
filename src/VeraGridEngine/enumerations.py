@@ -3556,6 +3556,7 @@ class FileType(Enum):
     DPX = "DPX"
     PWF = "PWF"
     EPC = "EPC"
+    ONS_EMS_STM = "ONS EMS STM v5"
     PyPsa_h5 = "PyPSA H5"
     PyPsa = "PyPsa"
     PandaPower = "Pandapower"

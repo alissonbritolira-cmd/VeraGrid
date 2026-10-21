@@ -115,6 +115,7 @@ class IoMain(ScenariosMain):
         self.rosetta_gui: Union[RosetaExplorerGUI, None] = None
 
         self.accepted_extensions = ['.veragrid', '.dveragrid',
+                                    '.stm', '.STM', '.prm', '.PRM',
                                     '.gridcal', '.dgridcal',
                                     '.xlsx', '.xls', '.sqlite', '.gch5',
                                     '.dgs', '.m', '.matpower', '.raw', '.RAW', '.json', '.uct', '.ucte',
@@ -140,6 +141,9 @@ class IoMain(ScenariosMain):
         # actions
         self.ui.actionNew_project.triggered.connect(self.new_project)
         self.ui.actionOpen_file.triggered.connect(self.open_file)
+        self.ems_import_data_action = QtGui.QAction(self.tr('ONS EMS import data...'), self)
+        self.ems_import_data_action.triggered.connect(self.show_ems_import_data)
+        self.ui.menuProject.addAction(self.ems_import_data_action)
         self.ui.actionAdd_circuit.triggered.connect(self.import_circuit)
         self.ui.actionImport_FMU.triggered.connect(self.import_oem_fmu_model)
         self.ui.actionImport_IEEE_CIGRE_DLL.triggered.connect(self.import_oem_manufacturer_native_model)
@@ -800,7 +804,7 @@ class IoMain(ScenariosMain):
 
         files_types += "*.gch5 *.xlsx *.xls *.sqlite *.dgs *.iidm *.xiidm"
         files_types += "*.m *.matpower *.raw *.RAW *.rawx *.uct *.json *.ejson2 *.ejson3 *.xml "
-        files_types += "*.zip *.dpx *.pwf *.epc *.EPC *.ech *.dta *.nc *.hdf5 *.p"
+        files_types += "*.zip *.dpx *.pwf *.epc *.EPC *.ech *.dta *.nc *.hdf5 *.p *.stm *.STM *.prm *.PRM"
 
         dialogue = QtWidgets.QFileDialog(None,
                                          caption=self.tr(title),
@@ -857,6 +861,20 @@ class IoMain(ScenariosMain):
 
             # try to determine the file type
             options.file_type = determine_file_type(file_name)
+
+            if options.file_type == FileType.ONS_EMS_STM:
+                from VeraGrid.Gui.FileDialogues.ons_ems_import import EmsImportDialog
+                dialog = EmsImportDialog(files=normalized_filenames, options=options, parent=self)
+                try:
+                    accepted = exec_dialog_safely(dialog=dialog)
+                finally:
+                    delete_dialog_safely(dialog=dialog)
+                if accepted != QtWidgets.QDialog.DialogCode.Accepted:
+                    self.UNLOCK()
+                    return
+                # The dialog's current selection is authoritative, including a
+                # PRM removed after selecting STM and PRM in the file picker.
+                file_name = next(f for f in normalized_filenames if pathlib.Path(f).suffix.lower() == '.stm')
 
             if options.file_type is None and bool_prompt_to_ask_if_unclear:
                 file_selector: FileTypeSelector = FileTypeSelector(file_name=file_name)
@@ -1007,6 +1025,14 @@ class IoMain(ScenariosMain):
                 if gui_config_data is not None:
                     self.apply_gui_config(data=gui_config_data)
 
+                if (self.open_file_thread_object.options.file_type == FileType.ONS_EMS_STM
+                        and self.open_file_thread_object.options.ems_apply_prm_pf):
+                    from VeraGrid.Gui.FileDialogues.ons_ems_import import apply_prm_pf_settings
+                    try:
+                        apply_prm_pf_settings(self.ui, self.circuit.import_metadata)
+                    except ValueError as error:
+                        warning_msg(text=str(error), title=self.tr('ONS EMS PRM options'))
+
                 # clear the results
                 self.clear_results()
                 self.dynamic_results_handlers = dict()
@@ -1076,6 +1102,19 @@ class IoMain(ScenariosMain):
         self.setup_time_sliders()
         self.get_circuit_snapshot_datetime()
         self.change_theme_mode()
+
+    def show_ems_import_data(self) -> None:
+        """Consult the source commands without reopening external files."""
+        metadata = self.circuit.import_metadata
+        if metadata.get('format') != 'ONS EMS STM v5':
+            info_msg(self.tr('The current circuit has no ONS EMS import data.'), self.tr('ONS EMS import data'))
+            return
+        from VeraGrid.Gui.FileDialogues.ons_ems_import import EmsImportDataDialog
+        dialog = EmsImportDataDialog(metadata=metadata, parent=self)
+        try:
+            exec_dialog_safely(dialog=dialog)
+        finally:
+            delete_dialog_safely(dialog=dialog)
 
     def install_plugin_now(self, file_name: str) -> None:
         """
