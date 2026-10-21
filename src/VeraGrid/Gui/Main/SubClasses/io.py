@@ -1323,8 +1323,7 @@ class IoMain(ScenariosMain):
         sessions_data = self.session.get_save_data() if self.ui.saveResultsCheckBox.isChecked() else list()
         for session in sessions_data:
             if session.tpe == SimulationTypes.RmsDynamic_run and session.results is not None:
-                session.results.archive_chunk_rows = (
-                    131072 if self.rms_chunked_results_checkBox.isChecked() else 0)
+                session.results.archive_chunked = self.rms_chunked_results_checkBox.isChecked()
 
         # get json files to store
         json_files = {"gui_config": self.get_gui_config_data()}

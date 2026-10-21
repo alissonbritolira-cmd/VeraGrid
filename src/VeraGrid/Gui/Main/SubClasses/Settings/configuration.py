@@ -234,7 +234,7 @@ class ConfigurationMain(ResultsMain):
             self.tr("Save RMS channels in chunks (experimental)"), self.ui.frame_77)
         self.rms_chunked_results_checkBox.setObjectName("rmsChunkedResultsCheckBox")
         self.rms_chunked_results_checkBox.setToolTip(self.tr(
-            "Load only selected RMS channels when reopening results. "
+            "Load requested RMS curves without loading the whole tensor. "
             "Older VeraGrid versions cannot read this optional result layout. "
             "Uncheck to save the historical dense format."))
         self.ui.label_155.hide()

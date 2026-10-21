@@ -2,10 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # SPDX-License-Identifier: MPL-2.0
-"""Optional indexed RMS traces; opening a result does not load its tensor.
+"""Read-only compatibility for the first published RMS archive prototype.
 
-This is a saved-result format, not an integration checkpoint. Members are
-independent float64 NPY columns, with bounded row counts and no pickle support.
+New files use the existing developed result_store/result_index format instead.
+This reader remains only so files created by the earlier public prototype can
+be reopened and exported. It is not an alternative active storage backend.
 """
 from io import BytesIO
 import hashlib
@@ -13,10 +14,10 @@ import json
 import math
 from pathlib import Path
 import re
-import uuid
 import zipfile
 
 import numpy as np
+from VeraGridEngine.IO.veragrid.result_store import ChunkedArray, ResultReader
 
 
 MAX_MANIFEST_BYTES = 16 * 1024 * 1024
@@ -30,42 +31,6 @@ def _identity(path):
     return stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns
 
 
-def write_rms_values(archive, member, values, chunk_rows):
-    """Write array-like traces in bounded column chunks and return the index."""
-    if type(chunk_rows) is not int or not 1 <= chunk_rows <= MAX_CHUNK_ROWS:
-        raise ValueError("RMS chunk rows must be between 1 and 131072")
-    shape = tuple(int(size) for size in values.shape)
-    if len(shape) != 3 or any(size < 0 for size in shape):
-        raise ValueError("RMS values must have time, variable and event-group axes")
-    dtype = np.dtype(values.dtype)
-    if dtype.kind != "f" or dtype.itemsize != 8:
-        raise ValueError("Indexed RMS traces require float64 values")
-    count = math.ceil(shape[0] / chunk_rows) * shape[1] * shape[2]
-    # Keep both the index and the ZIP central directory bounded.
-    if count > 50000:
-        raise ValueError("Too many RMS chunks; increase the chunk row count")
-    prefix = "rms_results/" + uuid.uuid4().hex
-    blocks = []
-    for group in range(shape[2]):
-        for variable in range(shape[1]):
-            for start in range(0, shape[0], chunk_rows):
-                stop = min(start + chunk_rows, shape[0])
-                column = np.asarray(values[start:stop, variable, group])
-                if column.shape != (stop - start,) or column.dtype != dtype:
-                    raise ValueError("Unexpected RMS column shape or dtype")
-                with BytesIO() as stream:
-                    np.save(stream, column, allow_pickle=False)
-                    payload = stream.getvalue()
-                name = f"{prefix}/g{group}/v{variable}/t{start}.npy"
-                archive.writestr(name, payload)
-                blocks.append({"member": name, "sha256": hashlib.sha256(payload).hexdigest()})
-    manifest = {"format": FORMAT, "version": 1, "shape": shape,
-                "dtype": dtype.str, "chunk_rows": chunk_rows, "blocks": blocks}
-    payload = json.dumps(manifest, separators=(",", ":")).encode("utf-8")
-    if len(payload) > MAX_MANIFEST_BYTES:
-        raise ValueError("RMS index exceeds 16 MiB")
-    archive.writestr(member, payload)
-    return manifest
 
 
 class ZipRmsValues:
@@ -231,15 +196,22 @@ def rebind_rms_archives(sessions, filename, folder="sessions"):
     """Rebind lazy sources only after the atomic save has replaced its target."""
     for session in sessions or ():
         results = session.results
-        if results is not None and isinstance(getattr(results, "values", None), ZipRmsValues):
-            member = f"{folder}/{session.name}/{session.tpe.value}/values.rms.json"
+        values = getattr(results, "values", None)
+        if isinstance(values, (ChunkedArray, ZipRmsValues)):
+            prefix = f"{folder}/{session.name}/{session.tpe.value}"
             with zipfile.ZipFile(filename) as archive:
-                if member in archive.namelist():
-                    results.values = ZipRmsValues(filename, member, archive=archive)
+                if prefix + '/result_index.json' in archive.namelist():
+                    # Native commit callbacks already retarget ChunkedArray in place.
+                    if isinstance(values, ChunkedArray):
+                        continue
+                    index = json.loads(archive.read(prefix + '/result_index.json'))
+                    reader = ResultReader(filename)
+                    descriptor = index['arrays']['values']
+                    reader.validate_members(descriptor['blocks'])
+                    results.values = ChunkedArray(reader, descriptor)
                 else:
                     # The user explicitly selected the historical dense format.
-                    dense_member = member[:-len(".rms.json")] + ".npy"
-                    with archive.open(dense_member) as stream:
+                    with archive.open(prefix + '/values.npy') as stream:
                         results.values = np.load(stream, allow_pickle=False)
 
 
@@ -250,7 +222,9 @@ def would_discard_rms_source(current_sessions, saved_sessions, filename):
     for session in current_sessions:
         results = session.results
         values = getattr(results, "values", None)
-        if (isinstance(values, ZipRmsValues) and Path(values.filename) == target
+        source = (values.reader.filename if isinstance(values, ChunkedArray)
+                  else values.filename if isinstance(values, ZipRmsValues) else None)
+        if (source is not None and Path(source) == target
                 and id(results) not in included_results):
             return True
     return False
