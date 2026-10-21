@@ -1086,6 +1086,7 @@ class SimulationsMain(TimeEventsMain):
             control_q=self.ui.control_q_checkBox.isChecked(),
             control_taps_phase=self.ui.control_tap_phase_checkBox.isChecked(),
             control_taps_modules=self.ui.control_tap_modules_checkBox.isChecked(),
+            control_discrete_shunts=self.ui.control_discrete_shunts_checkBox.isChecked(),
             control_remote_voltage=self.ui.control_remote_voltage_checkBox.isChecked(),
             orthogonalize_controls=self.ui.orthogonalize_pf_controls_checkBox.isChecked(),
             apply_temperature_correction=self.ui.temperature_correction_checkBox.isChecked(),

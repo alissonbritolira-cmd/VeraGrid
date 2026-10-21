@@ -28,6 +28,7 @@ class PowerFlowOptions(OptionsTemplate):
         'initialize_with_existing_solution',
         'control_taps_modules',
         'control_taps_phase',
+        'control_discrete_shunts',
         'control_remote_voltage',
         'orthogonalize_controls',
         'apply_temperature_correction',
@@ -54,6 +55,7 @@ class PowerFlowOptions(OptionsTemplate):
         GCProp(key="initialize_with_existing_solution", tpe=bool),
         GCProp(key="control_taps_modules", tpe=bool),
         GCProp(key="control_taps_phase", tpe=bool),
+        GCProp(key="control_discrete_shunts", tpe=bool),
         GCProp(key="control_remote_voltage", tpe=bool),
         GCProp(key="orthogonalize_controls", tpe=bool),
         GCProp(key="apply_temperature_correction", tpe=bool),
@@ -91,7 +93,8 @@ class PowerFlowOptions(OptionsTemplate):
                  initialize_angles: bool = False,
                  use_autodiff_jacobian: bool = False,
                  generate_report: bool = False,
-                 controls_start_tolerance: float = 1e-2):
+                 controls_start_tolerance: float = 1e-2,
+                 control_discrete_shunts: bool = True):
         """
         Power flow options class
         :param solver_type: Solver type
@@ -136,6 +139,7 @@ class PowerFlowOptions(OptionsTemplate):
         self.control_taps_modules = control_taps_modules
 
         self.control_taps_phase = control_taps_phase
+        self.control_discrete_shunts = bool(control_discrete_shunts)
 
         self.control_remote_voltage = control_remote_voltage
 

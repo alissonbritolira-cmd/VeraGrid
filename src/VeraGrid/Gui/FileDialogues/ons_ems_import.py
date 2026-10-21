@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: MPL-2.0
 """Explicit STM/PRM selection and read-only source consultation."""
 from pathlib import Path
+import math
+import json
 
 from PySide6 import QtCore, QtWidgets
 
@@ -53,8 +55,8 @@ class EmsImportDialog(QtWidgets.QDialog):
         self.stm = stm[0] if len(stm) == 1 else None
         self.selection_valid = len(stm) == 1 and len(prm) <= 1 and len(stm) + len(prm) == len(files)
         layout = QtWidgets.QVBoxLayout(self)
-        note = QtWidgets.QLabel(self.tr('Import the STM v5 AC network with fixed controls. '
-                                       'Unsupported electrical devices or controls stop the import with an explanation. '
+        note = QtWidgets.QLabel(self.tr('Import the complete STM v5 network using the developed EMS power-flow adapters. '
+                                       'Equipment and control records are retained, with execution limits explained. '
                                        'DYN, events and security regions are outside this importer.'))
         note.setWordWrap(True)
         layout.addWidget(note)
@@ -79,12 +81,13 @@ class EmsImportDialog(QtWidgets.QDialog):
         form = QtWidgets.QFormLayout()
         form.addRow(self.tr('System frequency (STM does not declare it)'), self.frequency)
         layout.addLayout(form)
-        self.apply_pf = QtWidgets.QCheckBox(self.tr('Apply supported PRM flow settings: PFMAXITER and PFFLTSTRT'))
+        self.apply_pf = QtWidgets.QCheckBox(self.tr('Review and apply supported PRM control permissions after importing'))
         self.apply_pf.setObjectName('ons_emsApplyPrmPf')
         self.apply_pf.setChecked(False)
         layout.addWidget(self.apply_pf)
-        note = QtWidgets.QLabel(self.tr('The current GUI settings remain in effect unless you select the option above. '
-                                       'All other PRM commands are retained for consultation and are not executed. '
+        note = QtWidgets.QLabel(self.tr('PF numeric defaults come from the selected PRM. Automatic taps, phase shifters '
+                                       'and discrete banks start blocked; the GUI choices take precedence. '
+                                       'The option above opens the existing PRM preview before applying permissions. '
                                        'Use File > ONS EMS import data to inspect the original inputs after importing.'))
         note.setWordWrap(True)
         layout.addWidget(note)
@@ -151,26 +154,6 @@ def validate_pf_parameters(parameters):
         raise ValueError('PFFLTSTRT must be T or F.')
 
 
-def apply_prm_pf_settings(ui, metadata):
-    """Called only following the user's explicit import-checkbox selection."""
-    parameters = metadata.get('parameters', {})
-    validate_pf_parameters(parameters)
-    applied = metadata.setdefault('applied_gui_options', {})
-    if 'PFMAXITER' in parameters:
-        value = int(parameters['PFMAXITER'])
-        widget = ui.max_iterations_spinBox
-        if not widget.minimum() <= value <= widget.maximum():
-            raise ValueError('PFMAXITER is outside the GUI iteration range; it was not rounded or applied.')
-    for command, value in parameters.items():
-        if command == 'PFMAXITER':
-            ui.max_iterations_spinBox.setValue(int(value))
-            applied[command] = {'value': int(value), 'origin': 'Explicit PRM selection in import dialog'}
-        elif command == 'PFFLTSTRT':
-            ui.use_voltage_guess_checkBox.setChecked(not value)
-            applied[command] = {'value': value, 'origin': 'Explicit PRM selection in import dialog'}
-    for assignment in metadata.get('assignments', []):
-        if assignment.get('command') in applied:
-            assignment['status'] = 'applied to GUI by explicit user selection'
 
 
 class EmsImportDataDialog(QtWidgets.QDialog):
@@ -217,13 +200,22 @@ class EmsImportDataDialog(QtWidgets.QDialog):
             section_layout.addWidget(selector)
             section_layout.addWidget(record_view)
             tabs.addTab(page, self.tr('All source records'))
-        table = QtWidgets.QTableWidget(len(metadata.get('assignments', [])), 4)
-        table.setHorizontalHeaderLabels([self.tr('Line'), self.tr('Command'), self.tr('Value'), self.tr('Treatment')])
+        from VeraGridEngine.IO.ons_ems.policy import parameter_inventory
+        records = parameter_inventory(metadata.get('parameters', {}), metadata.get('parameter_assignments'))
+        effective_records = metadata.get('effective_pf', {}).get('commands', [])
+        for record in records:
+            match = next((item for item in effective_records if item['command'] == record['command']
+                          and item.get('line') == record.get('line')), None)
+            if match and match.get('overridden_by') and record['effective_assignment']:
+                record['status'] = 'overridden by explicit option'
+                record['detail'] = f"{match['overridden_by']} = {match['effective_value']}; source request retained"
+        table = QtWidgets.QTableWidget(len(records), 5)
+        table.setHorizontalHeaderLabels([self.tr('Line'), self.tr('Command'), self.tr('Requested'),
+                                         self.tr('Status'), self.tr('Treatment')])
         table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
-        for index, assignment in enumerate(metadata.get('assignments', [])):
-            for column, value in enumerate((assignment['line'], assignment.get('command', ''),
-                                             assignment.get('value', assignment.get('text', '')),
-                                             assignment['status'])):
+        for index, assignment in enumerate(records):
+            for column, value in enumerate((assignment.get('line', ''), assignment['command'],
+                                             assignment['requested'], assignment['status'], assignment['detail'])):
                 table.setItem(index, column, QtWidgets.QTableWidgetItem(str(value)))
         table.resizeColumnsToContents()
         table.horizontalHeader().setStretchLastSection(True)
@@ -242,9 +234,156 @@ class EmsImportDataDialog(QtWidgets.QDialog):
         lines.extend(unsupported)
         summary.setPlainText('\n\n'.join(lines))
         tabs.addTab(summary, self.tr('Sources and diagnostics'))
+        if metadata.get('effective_pf'):
+            effective = QtWidgets.QPlainTextEdit(json.dumps(metadata['effective_pf'], ensure_ascii=False,
+                                                           indent=2, default=str))
+            effective.setReadOnly(True)
+            tabs.addTab(effective, self.tr('Effective PF options'))
         if unsupported:
             tabs.setCurrentWidget(summary)
         layout.addWidget(tabs)
         buttons = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Close)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
+
+
+PF_CONTROL_SWITCHES = (
+    ('control_taps_modules', 'control_tap_modules_checkBox', 'transformer_taps_module_control', 'BLKTAP', 'Módulo dos taps'),
+    ('control_taps_phase', 'control_tap_phase_checkBox', 'transformer_taps_phase_control', 'BLKSHFT', 'Defasadores'),
+    ('control_discrete_shunts', 'control_discrete_shunts_checkBox', 'discrete_shunts_control', 'BLKSHT', 'Bancos de shunts discretos'),
+)
+
+
+def apply_imported_pf_settings(ui, metadata, *, gui_config=None, fresh_import=True):
+    """Restore saved choices; a raw import never grants automatic permissions."""
+    parameters = metadata.get('parameters', {})
+    effective=metadata.get('effective_pf',{}).get('options',{})
+    saved = (gui_config or {}).get('power_flow', {})
+    origins = metadata.setdefault('pf_control_origins', {})
+    for field, widget, config_key, _command, _label in PF_CONTROL_SWITCHES:
+        if not fresh_import and config_key in saved:
+            value, origin = bool(saved[config_key]), 'Escolha conservada do estudo salvo'
+        elif not fresh_import and field in effective:
+            value, origin = bool(effective[field]), 'Última opção explícita incorporada ao estudo'
+        elif not fresh_import:
+            value, origin = False, 'Migração: permissão geral ausente no estudo legado; iniciada bloqueada'
+        else:
+            value, origin = False, 'Padrão bloqueado de novo caso importado'
+        control = getattr(ui, widget)
+        blocker = QtCore.QSignalBlocker(control)
+        control.setChecked(value)
+        del blocker
+        # Opening a native study is not a new control choice. Preserve its
+        # provenance as well as its value, otherwise merely reopening changes
+        # the RMS/DSA input fingerprint and makes current curves historical.
+        if fresh_import or field not in origins:
+            origins[field] = origin
+    ui.apply_pf_prm_button.setEnabled(bool(parameters))
+    # The GUI configuration has already restored precision, iterations and
+    # controls. Runtime metadata must not overwrite that deliberate snapshot.
+    if not fresh_import or metadata.get('format') != 'ONS EMS STM v5':
+        return
+    tolerance = effective.get('tolerance',parameters.get('PFMVATOL'))
+    if (isinstance(tolerance, (int, float)) and tolerance > 0 and
+            math.isclose(-math.log10(tolerance), round(-math.log10(tolerance)), abs_tol=1e-10)):
+        ui.tolerance_spinBox.setValue(round(-math.log10(tolerance)))
+    maximum = effective.get('max_iter',parameters.get('PFMAXITER'))
+    if isinstance(maximum, (int, float)) and maximum > 0:
+        ui.max_iterations_spinBox.setValue(int(maximum))
+    if 'PFGENVARIT' in parameters and maximum:
+        ui.control_q_checkBox.setChecked(parameters['PFGENVARIT'] < maximum)
+    if 'control_Q' in effective:ui.control_q_checkBox.setChecked(effective['control_Q'])
+    ui.control_remote_voltage_checkBox.setChecked(effective.get('control_remote_voltage',bool(metadata.get('remote_voltage_controls'))))
+    ui.use_voltage_guess_checkBox.setChecked(effective.get('use_stored_guess',not parameters.get('PFFLTSTRT', False)))
+
+
+def confirm_prm_changes(parent, title, rows, notes=()):
+    """Preview UI changes; reading a PRM alone never applies them."""
+    dialog = QtWidgets.QDialog(parent)
+    dialog.setWindowTitle(title)
+    dialog.resize(800, 470)
+    layout = QtWidgets.QVBoxLayout(dialog)
+    label = QtWidgets.QLabel('Confira as alterações abaixo. Aplicar muda somente estas opções; '
+        'os bloqueios individuais e os comandos ainda sem suporte permanecem. Nenhum cálculo será iniciado.')
+    label.setWordWrap(True)
+    layout.addWidget(label)
+    table = QtWidgets.QTableWidget(len(rows), 4)
+    table.setHorizontalHeaderLabels(['Opção', 'Valor atual', 'Valor do PRM', 'Origem'])
+    table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
+    for i, row in enumerate(rows):
+        for j, value in enumerate(row):
+            text = ('Permitido' if value else 'Bloqueado') if isinstance(value, bool) else str(value)
+            table.setItem(i, j, QtWidgets.QTableWidgetItem(text))
+    table.resizeColumnsToContents()
+    table.horizontalHeader().setStretchLastSection(True)
+    layout.addWidget(table, 1)
+    if notes:
+        note = QtWidgets.QPlainTextEdit('\n'.join(notes))
+        note.setReadOnly(True)
+        note.setMaximumHeight(115)
+        layout.addWidget(note)
+    buttons = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Apply |
+                                         QtWidgets.QDialogButtonBox.StandardButton.Cancel)
+    buttons.button(QtWidgets.QDialogButtonBox.StandardButton.Apply).setText('Aplicar opções')
+    buttons.button(QtWidgets.QDialogButtonBox.StandardButton.Apply).clicked.connect(dialog.accept)
+    buttons.rejected.connect(dialog.reject)
+    layout.addWidget(buttons)
+    return dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted
+
+
+def apply_prm_pf_settings_dialog(parent):
+    parameters = parent.circuit.import_metadata.get('parameters', {})
+    if not parameters:
+        QtWidgets.QMessageBox.information(parent, 'Padrões do PRM', 'Este estudo não possui PRM incorporado.')
+        return False
+    changes, rows, notes = [], [], []
+    for field, widget, _config_key, suffix, label in PF_CONTROL_SWITCHES:
+        command = 'PF'+suffix
+        if command in parameters:
+            if not isinstance(parameters[command],bool):
+                notes.append(command+': valor de bloqueio inválido; não será aplicado.')
+                continue
+            value = not bool(parameters[command])
+            control = getattr(parent.ui, widget)
+            changes.append((control, value, field))
+            rows.append((label, control.isChecked(), value, command+' (permissão inversa ao bloqueio)'))
+    value = parameters.get('PFMVATOL')
+    if isinstance(value, (int, float)) and value > 0 and math.isfinite(value):
+        exponent = -math.log10(value)
+        if (math.isclose(exponent, round(exponent), abs_tol=1e-10)
+                and parent.ui.tolerance_spinBox.minimum() <= round(exponent) <= parent.ui.tolerance_spinBox.maximum()):
+            changes.append((parent.ui.tolerance_spinBox, int(round(exponent)), None))
+            rows.append(('Tolerância do fluxo [pu]', 10.**-parent.ui.tolerance_spinBox.value(), value, 'PFMVATOL'))
+        else:
+            notes.append('PFMVATOL não é uma potência de 10 representável neste campo; não foi arredondado nem aplicado.')
+    maximum = parameters.get('PFMAXITER')
+    if (not isinstance(maximum,bool) and isinstance(maximum, (int, float)) and math.isfinite(maximum)
+            and parent.ui.max_iterations_spinBox.minimum() <= maximum <= parent.ui.max_iterations_spinBox.maximum()
+            and float(maximum).is_integer()):
+        changes.append((parent.ui.max_iterations_spinBox, int(maximum), None))
+        rows.append(('Máximo de iterações', parent.ui.max_iterations_spinBox.value(), int(maximum), 'PFMAXITER'))
+        delay = parameters.get('PFGENVARIT', 0)
+        if delay == 0 or delay >= maximum:
+            value = delay < maximum
+            changes.append((parent.ui.control_q_checkBox, value, None))
+            rows.append(('Limites de Q', parent.ui.control_q_checkBox.isChecked(), value, 'PFGENVARIT'))
+        else:
+            notes.append('PFGENVARIT intermediário sem execução qualificada; a escolha de limites de Q não será alterada.')
+    if 'PFFLTSTRT' in parameters:
+        value = not bool(parameters['PFFLTSTRT'])
+        changes.append((parent.ui.use_voltage_guess_checkBox, value, None))
+        rows.append(('Usar tensão cadastrada', parent.ui.use_voltage_guess_checkBox.isChecked(), value, 'PFFLTSTRT'))
+    notes.append('Ajuste de bancos discretos não bloqueia SVC contínuo. Eventos/proteções RMS não são desligados por estas permissões do fluxo.')
+    notes.append('Busca, contingências e parâmetros próprios de uma região não são alterados por este botão do F5.')
+    if not confirm_prm_changes(parent, 'Prévia do PRM — fluxo de potência', rows, notes):
+        return False
+    origins = parent.circuit.import_metadata.setdefault('pf_control_origins', {})
+    for widget, value, field in changes:
+        if isinstance(widget, QtWidgets.QCheckBox):
+            widget.setChecked(value)
+        else:
+            widget.setValue(value)
+        if field:
+            origins[field] = 'PRM aplicado explicitamente pela prévia do fluxo'
+    if hasattr(parent, "study_model_changed"): parent.study_model_changed()
+    return True

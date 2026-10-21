@@ -33,15 +33,22 @@ This policy is enforced through pull request review and documented in [CONTRIBUT
 
 ## ONS EMS state-estimator import
 
-The STM/PRM parser, native persistence, independent PF comparison and import
+The STM/PRM parser, complete source-case inventories, native persistence,
+independent PF comparison, developed LCC/CCC and control regressions, and import
 widgets can be checked with:
 
 ```bash
-python -m pytest src/tests/FileFormats/test_ons_ems_stm.py src/tests/GUI/test_ons_ems_import.py src/tests/GUI/test_io_open_file_single_path.py
+python -m pytest src/tests/FileFormats/test_ons_ems_stm.py src/tests/FileFormats/test_ons_ems_developed_pf.py src/tests/FileFormats/test_ons_ems_developed_ccc.py src/tests/FileFormats/test_ons_ems_developed_discrete.py src/tests/GUI/test_ons_ems_import.py src/tests/GUI/test_io_open_file_single_path.py
 ```
 
-See [ONS EMS STM import](doc/md_source/ons_ems_stm.md) for the supported AC slice,
-read-only real-case inspection and separate native desktop acceptance steps.
+The developed tests retain the existing physical assertions for source-free
+reference buses, converter energy/AC coupling, OLTC and bank steps, continuous
+SVCs, phase targets, failed/cancelled control rollback and repeated solves.
+The small developed phase-control fixture is independent of the supplied full
+cases. Automated widget tests do not replace real Windows desktop acceptance.
+
+See [ONS EMS STM import](doc/md_source/ons_ems_stm.md) for electrical coverage,
+qualification limits and separate native desktop acceptance steps.
 
 ## Linting and static analysis
 

@@ -1025,11 +1025,17 @@ class IoMain(ScenariosMain):
                 if gui_config_data is not None:
                     self.apply_gui_config(data=gui_config_data)
 
+                if self.circuit.import_metadata.get('format') == 'ONS EMS STM v5':
+                    from VeraGrid.Gui.FileDialogues.ons_ems_import import apply_imported_pf_settings
+                    apply_imported_pf_settings(self.ui, self.circuit.import_metadata,
+                        gui_config=gui_config_data,
+                        fresh_import=self.open_file_thread_object.options.file_type == FileType.ONS_EMS_STM)
+
                 if (self.open_file_thread_object.options.file_type == FileType.ONS_EMS_STM
                         and self.open_file_thread_object.options.ems_apply_prm_pf):
-                    from VeraGrid.Gui.FileDialogues.ons_ems_import import apply_prm_pf_settings
+                    from VeraGrid.Gui.FileDialogues.ons_ems_import import apply_prm_pf_settings_dialog
                     try:
-                        apply_prm_pf_settings(self.ui, self.circuit.import_metadata)
+                        apply_prm_pf_settings_dialog(self)
                     except ValueError as error:
                         warning_msg(text=str(error), title=self.tr('ONS EMS PRM options'))
 

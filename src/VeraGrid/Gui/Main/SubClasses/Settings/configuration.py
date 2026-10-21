@@ -213,6 +213,7 @@ class ConfigurationMain(ResultsMain):
         self.language_label: QtWidgets.QLabel = self.ui.language_label
         self.language_combo_box: QtWidgets.QComboBox = self.ui.language_combo_box
         self.create_language_controls()
+        self.create_pf_control_permissions()
 
         # check boxes
         # Use the checkbox state-change signal so the theme refresh path runs for both
@@ -226,6 +227,42 @@ class ConfigurationMain(ResultsMain):
 
         self.plugin_windows_list = list()
         self.translation_controller: ApplicationTranslator | None = None
+
+
+
+    def create_pf_control_permissions(self):
+        """One general switch per native control, saved with the existing GUI options."""
+        box = QtWidgets.QCheckBox('Permitir chaveamento de bancos de shunts discretos', self.ui.frame_47)
+        box.setObjectName('control_discrete_shunts_checkBox')
+        box.setToolTip('Permissão geral para bancos discretos. Bloqueado conserva a posição e a admitância; '
+                       'não desliga shunts fixos nem o controle individual de SVC contínuo.')
+        self.ui.control_discrete_shunts_checkBox = box
+        self.ui.gridLayout_38.addWidget(box, 7, 0, 1, 2)
+        from VeraGrid.Gui.FileDialogues.ons_ems_import import PF_CONTROL_SWITCHES
+        for field, widget, _config, _command, label in PF_CONTROL_SWITCHES:
+            control = getattr(self.ui, widget)
+            control.setToolTip(label+': permissão geral, respeitando o modo e os bloqueios de cada equipamento. '
+                               'Novo caso importado começa bloqueado. Escolhas salvas são preservadas.')
+            control.clicked.connect(lambda checked, key=field: self.record_pf_control_choice(key))
+        button = QtWidgets.QPushButton('Usar padrões do PRM no fluxo…', self.ui.frame_47)
+        button.setObjectName('apply_pf_prm_button')
+        button.setEnabled(False)
+        button.setToolTip('Mostra uma prévia das opções compatíveis antes de aplicar. '
+                          'A configuração própria de uma região permanece separada e identificada.')
+        button.clicked.connect(self.apply_pf_prm_options)
+        self.ui.apply_pf_prm_button = button
+        self.ui.gridLayout_38.addWidget(button, 8, 0, 1, 2)
+
+
+    def record_pf_control_choice(self, field):
+        if self.circuit is not None:
+            self.circuit.import_metadata.setdefault('pf_control_origins', {})[field] = 'Escolha explícita na interface'
+
+
+    def apply_pf_prm_options(self):
+        from VeraGrid.Gui.FileDialogues.ons_ems_import import apply_prm_pf_settings_dialog
+        apply_prm_pf_settings_dialog(self)
+
 
     def create_language_controls(self) -> None:
         """
@@ -530,6 +567,7 @@ class ConfigurationMain(ResultsMain):
                 "reactive_power_control_mode": self.ui.control_q_checkBox,
                 "transformer_taps_module_control": self.ui.control_tap_modules_checkBox,
                 "transformer_taps_phase_control": self.ui.control_tap_phase_checkBox,
+                "discrete_shunts_control": self.ui.control_discrete_shunts_checkBox,
                 "remote_voltage_controls_switch": self.ui.control_remote_voltage_checkBox,
                 "orthogonalize_controls": self.ui.orthogonalize_pf_controls_checkBox,
 

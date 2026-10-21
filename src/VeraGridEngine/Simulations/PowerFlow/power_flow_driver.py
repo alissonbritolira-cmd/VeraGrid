@@ -23,6 +23,7 @@ if TYPE_CHECKING:  # Only imports the below statements during type checking
 class PowerFlowDriver(DriverTemplate):
     __slots__ = (
         "options",
+        "import_adapter_internal",
         "opf_results",
         "t_idx",
         "convergence_reports",
@@ -39,7 +40,8 @@ class PowerFlowDriver(DriverTemplate):
                  options: Union[PowerFlowOptions, None] = None,
                  opf_results: Union[OptimalPowerFlowResults, None] = None,
                  t_idx: int | None = None,
-                 engine: EngineType = EngineType.VeraGrid):
+                 engine: EngineType = EngineType.VeraGrid,
+                 import_adapter_internal: bool = False):
         """
         PowerFlowDriver class constructor
         :param grid: MultiCircuit instance
@@ -52,6 +54,10 @@ class PowerFlowDriver(DriverTemplate):
 
         # Options to use
         self.options: PowerFlowOptions = PowerFlowOptions() if options is None else options
+        self.import_adapter_internal = import_adapter_internal
+        if grid.import_metadata.get('format') == 'ONS EMS STM v5' and not import_adapter_internal:
+            from VeraGridEngine.IO.ons_ems.policy import pf_options
+            self.options = pf_options(grid, options)
 
         self.opf_results: Union[OptimalPowerFlowResults, None] = opf_results
 
@@ -133,6 +139,22 @@ class PowerFlowDriver(DriverTemplate):
         """
         self.tic()
         self.report_text("Compiling and configuring...")
+        imported_snapshot = (self.grid.import_metadata.get('format') == 'ONS EMS STM v5'
+                             and not self.import_adapter_internal)
+        if imported_snapshot:
+            from VeraGridEngine.IO.ons_ems.policy import check_execution
+            try:
+                if self.engine != EngineType.VeraGrid:
+                    raise ValueError('ONS EMS STM controls require the native VeraGrid engine.')
+                check_execution(self.grid, self.options)
+            except ValueError as error:
+                from VeraGridEngine.basic_structures import ConvergenceReport
+                report = ConvergenceReport()
+                report.add(self.options.solver_type, False, float('inf'), 0., 0)
+                self.results.convergence_reports = [report]
+                self.logger.add_error(str(error))
+                self.toc()
+                return
         if self.engine == EngineType.GSLV and not GSLV_AVAILABLE:
             self.engine = EngineType.VeraGrid
             self.logger.add_warning('Failed back to VeraGrid')
@@ -142,8 +164,20 @@ class PowerFlowDriver(DriverTemplate):
             self.logger.add_warning('Failed back to VeraGrid')
 
         if self.engine == EngineType.VeraGrid:
-
-            self.results = multi_island_pf(multi_circuit=self.grid,
+            imported = self.grid.import_metadata.get('format') == 'ONS EMS STM v5' and not self.import_adapter_internal
+            if not self.import_adapter_internal and self.grid.import_metadata.get('pf_adapter_required'):
+                from VeraGridEngine.IO.ons_ems.stm_controls import solve_stm_controls
+                try:
+                    self.results = solve_stm_controls(self.grid, self.options, self.logger,
+                                                  cancel_callback=lambda: self.__cancel__)
+                except (ValueError, RuntimeError) as error:
+                    from VeraGridEngine.basic_structures import ConvergenceReport
+                    report = ConvergenceReport()
+                    report.add(self.options.solver_type, False, float('inf'), 0., 0)
+                    self.results.convergence_reports = [report]
+                    self.logger.add_error(str(error))
+            else:
+                self.results = multi_island_pf(multi_circuit=self.grid,
                                            t=self.t_idx,
                                            options=self.options,
                                            opf_results=self.opf_results,
@@ -168,6 +202,24 @@ class PowerFlowDriver(DriverTemplate):
 
         else:
             raise Exception('Engine ' + self.engine.value + ' not implemented for ' + self.name)
+
+        if (self.grid.import_metadata.get('format') == 'ONS EMS STM v5'
+                and not self.import_adapter_internal and self.results.converged):
+            from VeraGridEngine.IO.ons_ems.policy import normalize_pf_results, check_low_voltage, ignored_single_buses
+            try:
+                ignored = ignored_single_buses(self.grid, self.options)
+                # The developed adapter already validates its private physical
+                # state. Rechecking the untouched source registration would
+                # treat source-free isolated SW references as energized again.
+                if not self.grid.import_metadata.get('pf_adapter_required'):
+                    check_low_voltage(self.grid, self.results.voltage, ignored_codes=ignored)
+                normalize_pf_results(self.grid, self.results)
+            except ValueError as error:
+                from VeraGridEngine.basic_structures import ConvergenceReport
+                report = ConvergenceReport()
+                report.add(self.options.solver_type, False, float('inf'), 0., 0)
+                self.results.convergence_reports = [report]
+                self.logger.add_error(str(error))
 
         # fill F, T, Areas, etc...
         self.results.fill_circuit_info(self.grid)

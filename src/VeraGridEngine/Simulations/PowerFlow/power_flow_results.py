@@ -171,6 +171,9 @@ class PowerFlowResults(ResultsTemplate):
         ResultsProperty(name='losses_hvdc', tpe=Vec, old_names=list(), expandable=False),
         ResultsProperty(name='Pf_hvdc', tpe=Vec, old_names=list(), expandable=False),
         ResultsProperty(name='Pt_hvdc', tpe=Vec, old_names=list(), expandable=False),
+        ResultsProperty(name='Qf_hvdc', tpe=Vec, old_names=list(), expandable=False),
+        ResultsProperty(name='Qt_hvdc', tpe=Vec, old_names=list(), expandable=False),
+        ResultsProperty(name='hvdc_terminal_q_complete', tpe=IntVec, old_names=list(), expandable=False),
         ResultsProperty(name='loading_hvdc', tpe=Vec, old_names=list(), expandable=False),
         ResultsProperty(name='losses_vsc', tpe=Vec, old_names=list(), expandable=False),
         ResultsProperty(name='Pfp_vsc', tpe=Vec, old_names=list(), expandable=False),
@@ -210,6 +213,9 @@ class PowerFlowResults(ResultsTemplate):
         "losses_hvdc",
         "Pf_hvdc",
         "Pt_hvdc",
+        "Qf_hvdc",
+        "Qt_hvdc",
+        "hvdc_terminal_q_complete",
         "loading_hvdc",
         "Pfp_vsc",
         "Pfn_vsc",
@@ -364,6 +370,9 @@ class PowerFlowResults(ResultsTemplate):
         self.losses_hvdc: Vec = np.zeros(n_hvdc)
         self.Pf_hvdc: Vec = np.zeros(n_hvdc)
         self.Pt_hvdc: Vec = np.zeros(n_hvdc)
+        self.Qf_hvdc: Vec = np.zeros(n_hvdc)
+        self.Qt_hvdc: Vec = np.zeros(n_hvdc)
+        self.hvdc_terminal_q_complete: IntVec = np.zeros(n_hvdc, dtype=int)
         self.loading_hvdc: Vec = np.zeros(n_hvdc)
 
         # VSC
